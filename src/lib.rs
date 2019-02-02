@@ -129,8 +129,8 @@ use typenum::marker_traits::Unsigned;
 /// * To be extra clear: the declared address must be non-zero because this type
 ///   uses the `NonZeroUsize` type internally (it makes the iterators a lot
 ///   better). It's possible to have a device memory mapped to the zero address,
-///   but not ever valid to access the null address from within Rust. For that
-///   rare situation you'd need to use inline assembly.
+///   but it is not ever valid to access the null address from within Rust. For
+///   that rare situation you'd need to use inline assembly.
 /// * The declared address must be aligned for the declared type of `T`.
 /// * The declared address must always read as a valid bit pattern for the type
 ///   `T`, regardless of the state of the memory mapped hardware. If there's any
