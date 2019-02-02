@@ -3,8 +3,8 @@
 #![forbid(missing_docs)]
 #![forbid(missing_debug_implementations)]
 
-//! **voladdress** is a crate that makes it easy to work with volatile memory addresses
-//! (eg: memory mapped hardware).
+//! `voladdress` is a crate that makes it easy to work with volatile memory
+//! addresses (eg: memory mapped hardware).
 //!
 //! For example, on the GBA there's a palette of 256 background color values
 //! (`u16`) starting at `0x500_0000`, so you might write something like.
@@ -37,11 +37,10 @@
 //! }
 //! ```
 //!
-//! You can always use an address of any `*mut T` that you have (which is how
-//! the tests and doctests work), but the _intent_ is that you use this crate
-//! with memory mapped hardware. Exactly what hardware is memory mapped where
-//! depends on your target device. Please read your target device's
-//! documentation.
+//! You _could_ use an address of any `*mut T` that you have (which is how the
+//! tests and doctests work), but the _intent_ is that you use this crate with
+//! memory mapped hardware. Exactly what hardware is memory mapped where depends
+//! on your target device. Please read your target device's documentation.
 //!
 //! # Why Use This?
 //!
