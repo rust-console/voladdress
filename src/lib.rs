@@ -4,7 +4,7 @@
 #![forbid(missing_debug_implementations)]
 
 //! This is a crate that makes it easy to work with volatile memory addresses
-//! (eg: raw hardware addresses).
+//! (eg: memory mapped hardware).
 //!
 //! For example, on the GBA there's a palette of 256 background color values
 //! (`u16`) starting at `0x500_0000`, so you might write something like.
@@ -28,22 +28,20 @@
 //! #  let palram = vec![0u16; 256];
 //! #  let PALRAM_BG: VolBlock<Color,U256> = unsafe { VolBlock::new(palram.as_ptr() as usize) };
 //!   let i = 5;
-//!   // the palette is all 0 at startup.
+//!   // the palette is all 0 (black) at startup.
 //!   assert_eq!(PALRAM_BG.index(i).read(), 0);
-//!   // we can make that index into white instead.
-//!   const WHITE: u16 = 0b0_11111_11111_1111;
-//!   PALRAM_BG.index(i).write(WHITE);
-//!   assert_eq!(PALRAM_BG.index(i).read(), WHITE);
+//!   // we can make that index blue instead.
+//!   const BLUE: u16 = 0b11111;
+//!   PALRAM_BG.index(i).write(BLUE);
+//!   assert_eq!(PALRAM_BG.index(i).read(), BLUE);
 //! }
 //! ```
 //!
-//! The specific addresses that are safe to use depend on your exact target
-//! device. Please read your target device's documentation.
-//!
-//! (Note: If you look at the source for the tests and doctests you'll see that
-//! they make `Vec<_>` values as a stand in for real memory. This is for
-//! demonstration and testing _only_. In a real program you should use the
-//! actual, correct addresses for your hardware.)
+//! You can always use an address of any `*mut T` that you have (which is how
+//! the tests and doctests work), but the _intent_ is that you use this crate
+//! with memory mapped hardware. Exactly what hardware is memory mapped where
+//! depends on your target device. Please read your target device's
+//! documentation.
 //!
 //! # Why Use This?
 //!
@@ -54,7 +52,7 @@
 //! [write](https://doc.rust-lang.org/core/ptr/fn.write.html) functions. The
 //! compiler is allowed to elide these accesses if it "knows" what the value is
 //! already going to be, or if it "knows" that the read will never be seen.
-//! However, when working with raw hardware addresses the read and write
+//! However, when working with memory mapped hardware the read and write
 //! operations have various side effects that the compiler isn't aware of, so
 //! the access must not be elided. You have to use
 //! [read_volatile](https://doc.rust-lang.org/core/ptr/fn.read_volatile.html)
@@ -85,9 +83,10 @@
 //! _more_ aggressive about it than raw pointers are because they assume that
 //! either the target value never changes (`&T`) so you don't ever need to read
 //! twice, or the target value is exclusively controlled by the local scope
-//! (`&mut T`) so you never need to do intermediate writes. For standard memory
-//! (in registers or RAM) this is exactly what we want, but with raw hardware
-//! addresses this is the opposite of a good time.
+//! (`&mut T`) so you never need to do intermediate writes. For standard code
+//! this is exactly what we want (it makes the code faster to skip reads and
+//! writes we don't need), but with memory mapped hardware this is the opposite
+//! of a good time.
 
 use core::{cmp::Ordering, iter::FusedIterator, marker::PhantomData, num::NonZeroUsize};
 use typenum::marker_traits::Unsigned;
@@ -98,24 +97,16 @@ use typenum::marker_traits::Unsigned;
 // values, the capabilities we offer aren't at all affected by whatever type `T`
 // ends up being.
 
-/// Abstracts the use of a volatile hardware address.
+/// Abstracts the use of a volatile memory address.
 ///
-/// If you're trying to do anything other than abstract a volatile hardware
-/// device then you _do not want to use this type_. Use one of the many other
-/// smart pointer types.
-///
-/// A volatile address doesn't store a value in the normal way: It maps to some
-/// real hardware _other than_ RAM, and that hardware might have any sort of
-/// strange rules. The specifics of reading and writing depend on the hardware
-/// being mapped. For example, a particular address might be read only (ignoring
-/// writes), write only (returning some arbitrary value if you read it),
-/// "normal" read write (where you read back what you wrote), or some complex
-/// read-write situation where writes have an effect but you _don't_ read back
-/// what you wrote.
+/// If you're trying to do anything other than abstract a memory mapped hardware
+/// device then you probably want one of the many other smart pointer types in
+/// the standard library.
 ///
 /// The design of this type is set up so that _creation_ is unsafe, and _use_ is
-/// safe. This gives an optimal experience, since you'll use memory locations a
-/// lot more often than you try to name them, on average.
+/// safe. This is the opposite of a raw pointer, but it gives an optimal
+/// experience. You'll use volatile addresses a lot more often than you try to
+/// create them, on average.
 ///
 /// It's generally expected that you'll create `VolAddress` values by declaring
 /// `const` globals at various points in your code for the various memory
@@ -134,24 +125,25 @@ use typenum::marker_traits::Unsigned;
 /// In order for values of this type to operate correctly they must follow quite
 /// a few safety limits:
 ///
-/// * The declared address must be non-null (it uses the `NonNull` optimization
-///   for better iteration results). This shouldn't be a big problem, since
-///   hardware can't live at the null address.
-/// * The declared address must be aligned for the declared type of `T`.
-/// * The declared address must _always_ be
+/// * The declared address must always be
 ///   "[valid](https://doc.rust-lang.org/core/ptr/index.html#safety)" according
-///   to the rules of `core::ptr`. Don't pick a type if the hardware might show
-///   invalid bit patterns. If there's _any_ doubt at all, you must instead read
-///   or write an unsigned int of the correct bit size and then parse the bits
-///   by hand.
+///   to the rules of `core::ptr`.
+/// * To be extra clear: the declared address must be non-null because this type
+///   uses the `NonNull` optimization for better iteration results.
+/// * The declared address must be aligned for the declared type of `T`.
+/// * The declared address must always read as a valid bit pattern for the type
+///   `T`, regardless of the state of the memory mapped hardware. If there's any
+///   doubt at all, you must instead read or write an unsigned int of the
+///   correct bit size (`u16`, `u32`, etc) and then parse the bits by hand.
 /// * The declared address must be a part of the address space that Rust's
 ///   allocator and/or stack frames will never use.
 ///
 /// If you're not sure about any of those points, please re-read the hardware
-/// specs of your target device and its memory map until you know.
+/// specs of your target device and its memory map until you know for sure.
 ///
-/// The _exact_ points of UB are if the address is ever 0, or if you ever
-/// actually `read` or `write` with an invalidly constructed `VolAddress`.
+/// The _exact_ points of UB are if the address is ever 0 (because it's stored
+/// as `NonNullUsize`), or if you ever actually `read` or `write` with an
+/// invalidly constructed `VolAddress`.
 #[repr(transparent)]
 pub struct VolAddress<T> {
   address: NonZeroUsize,
@@ -180,8 +172,9 @@ impl<T> Ord for VolAddress<T> {
   }
 }
 impl<T> core::fmt::Debug for VolAddress<T> {
-  /// The basic formatting uses the pointer style
+  /// The basic formatting uses the pointer style by default
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    // defer all writing to the `Pointer` impl
     write!(f, "{:p}", self)
   }
 }
