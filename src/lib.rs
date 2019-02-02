@@ -104,8 +104,7 @@ use typenum::marker_traits::Unsigned;
 ///
 /// The design of this type is set up so that _creation_ is unsafe, and _use_ is
 /// safe. This is the opposite of a raw pointer, but it gives an optimal
-/// experience. You'll use volatile addresses a lot more often than you try to
-/// create them, on average.
+/// experience. You'll use volatile addresses a lot more than you create them.
 ///
 /// It's generally expected that you'll create `VolAddress` values by declaring
 /// `const` globals at various points in your code for the various memory
@@ -127,8 +126,11 @@ use typenum::marker_traits::Unsigned;
 /// * The declared address must always be
 ///   "[valid](https://doc.rust-lang.org/core/ptr/index.html#safety)" according
 ///   to the rules of `core::ptr`.
-/// * To be extra clear: the declared address must be non-null because this type
-///   uses the `NonNull` optimization for better iteration results.
+/// * To be extra clear: the declared address must be non-zero because this type
+///   uses the `NonZeroUsize` type internally (it makes the iterators a lot
+///   better). It's possible to have a device memory mapped to the zero address,
+///   but not ever valid to access the null address from within Rust. For that
+///   rare situation you'd need to use inline assembly.
 /// * The declared address must be aligned for the declared type of `T`.
 /// * The declared address must always read as a valid bit pattern for the type
 ///   `T`, regardless of the state of the memory mapped hardware. If there's any
