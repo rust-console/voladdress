@@ -182,16 +182,15 @@ impl<T> Ord for VolAddress<T> {
   }
 }
 impl<T> core::fmt::Debug for VolAddress<T> {
-  /// The basic formatting uses the pointer style by default
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    // defer all writing to the `Pointer` impl
-    write!(f, "{:p}", self)
+    write!(f, "VolAddress({:p})", *self)
   }
 }
 impl<T> core::fmt::Pointer for VolAddress<T> {
-  /// You can request pointer style, but it's already on by default
+  /// You can request pointer style to get _just_ the inner value with pointer
+  /// formatting.
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolAddress({:p})", self.address.get() as *mut T)
+    write!(f, "{:p}", self.address.get() as *mut T)
   }
 }
 impl<T> VolAddress<T> {
@@ -315,9 +314,9 @@ impl<T, C:Unsigned> PartialEq for VolBlock<T, C> {
 }
 impl<T, C:Unsigned> Eq for VolBlock<T, C> {}
 impl<T, C:Unsigned> core::fmt::Debug for VolBlock<T, C> {
-  // The basic formatting uses the pointer style
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolBlock({:p}, c={})", self.vol_address.address.get() as *mut T, C::USIZE)
+    write!(f, "VolBlock({:p}, count={})",
+      self.vol_address.address.get() as *mut T, C::USIZE)
   }
 }
 impl<T, C:Unsigned> VolBlock<T, C> {
@@ -329,6 +328,11 @@ impl<T, C:Unsigned> VolBlock<T, C> {
   /// block for however many slots (`C`).
   pub const unsafe fn new(address: usize) -> Self {
     Self { vol_address: VolAddress::new(address), slot_count: PhantomData }
+  }
+
+  /// The length of this block (in elements)
+  pub const fn len(self) -> usize {
+    C::USIZE
   }
 
   /// Gives an iterator over the slots of this block.
@@ -351,7 +355,7 @@ impl<T, C:Unsigned> VolBlock<T, C> {
   /// Checked "indexing" style access of the block, giving either a `VolAddress` or a panic.
   pub fn index(self, slot: usize) -> VolAddress<T> {
     if slot < C::USIZE {
-      unsafe { self.vol_address.offset(slot as isize) }
+      unsafe { self.index_unchecked(slot) }
     } else {
       panic!("Index Requested: {} >= Slot Count: {}", slot, C::USIZE)
     }
@@ -360,7 +364,7 @@ impl<T, C:Unsigned> VolBlock<T, C> {
   /// Checked "getting" style access of the block, giving an Option value.
   pub fn get(self, slot: usize) -> Option<VolAddress<T>> {
     if slot < C::USIZE {
-      unsafe { Some(self.vol_address.offset(slot as isize)) }
+      unsafe { Some(self.index_unchecked(slot)) }
     } else {
       None
     }
@@ -392,9 +396,9 @@ impl<T, C: Unsigned, S: Unsigned> PartialEq for VolSeries<T, C, S> {
 }
 impl<T, C: Unsigned, S: Unsigned> Eq for VolSeries<T, C, S> {}
 impl<T, C: Unsigned, S: Unsigned> core::fmt::Debug for VolSeries<T, C, S> {
-  // The basic formatting uses the pointer style
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolSeries({:p}, c={}, s={})", self.vol_address.address.get() as *mut T, C::USIZE, S::USIZE)
+    write!(f, "VolSeries({:p}, count={}, series={})",
+      self.vol_address.address.get() as *mut T, C::USIZE, S::USIZE)
   }
 }
 impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
@@ -408,6 +412,11 @@ impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
     Self { vol_address: VolAddress::new(address), slot_count: PhantomData, stride: PhantomData }
   }
 
+  /// The length of this series (in elements)
+  pub const fn len(self) -> usize {
+    C::USIZE
+  }
+
   /// Gives an iterator over the slots of this series.
   pub const fn iter(self) -> VolStridingIter<T, S> {
     VolStridingIter {
@@ -417,28 +426,28 @@ impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
     }
   }
 
-  /// Unchecked indexing into the block.
+  /// Unchecked indexing into the series.
   ///
   /// # Safety
   ///
   /// The slot given must be in bounds.
   pub const unsafe fn index_unchecked(self, slot: usize) -> VolAddress<T> {
-    self.vol_address.offset(slot as isize)
+    self.vol_address.cast::<u8>().offset((S::USIZE * slot) as isize).cast::<T>()
   }
 
-  /// Checked "indexing" style access of the block, giving either a `VolAddress` or a panic.
+  /// Checked "indexing" style access into the series, giving either a `VolAddress` or a panic.
   pub fn index(self, slot: usize) -> VolAddress<T> {
     if slot < C::USIZE {
-      unsafe { self.vol_address.offset(slot as isize) }
+      unsafe { self.index_unchecked(slot) }
     } else {
       panic!("Index Requested: {} >= Slot Count: {}", slot, C::USIZE)
     }
   }
 
-  /// Checked "getting" style access of the block, giving an Option value.
+  /// Checked "getting" style access into the series, giving an Option value.
   pub fn get(self, slot: usize) -> Option<VolAddress<T>> {
     if slot < C::USIZE {
-      unsafe { Some(self.vol_address.offset(slot as isize)) }
+      unsafe { Some(self.index_unchecked(slot)) }
     } else {
       None
     }
@@ -479,12 +488,18 @@ impl<T> Iterator for VolIter<T> {
       None
     }
   }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    (self.slots_remaining, Some(self.slots_remaining))
+  }
+
+  // TODO: a lot of other method overrides to make this optimized.
 }
 impl<T> FusedIterator for VolIter<T> {}
 impl<T> core::fmt::Debug for VolIter<T> {
-  // The basic formatting uses the pointer style
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolIter({:p}, remaining={})", self.vol_address.address.get() as *mut T, self.slots_remaining)
+    write!(f, "VolIter({:p}, remaining={})",
+      self.vol_address.address.get() as *mut T, self.slots_remaining)
   }
 }
 
@@ -524,11 +539,17 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
       None
     }
   }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    (self.slots_remaining, Some(self.slots_remaining))
+  }
+
+  // TODO: a lot of other method overrides to make this optimized.
 }
 impl<T, S: Unsigned> FusedIterator for VolStridingIter<T, S> {}
 impl<T, S: Unsigned> core::fmt::Debug for VolStridingIter<T, S> {
-  // The basic formatting uses the pointer style
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolStridingIter({:p}, remaining={}, s={})", self.vol_address.address.get() as *mut T, self.slots_remaining, S::USIZE)
+    write!(f, "VolStridingIter({:p}, remaining={}, stride={})",
+      self.vol_address.address.get() as *mut T, self.slots_remaining, S::USIZE)
   }
 }
