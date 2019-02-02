@@ -6,6 +6,12 @@
 //! `voladdress` is a crate that makes it easy to work with volatile memory
 //! addresses (eg: memory mapped hardware).
 //!
+//! Specific memory mapped hardware addresses may have particular read and write
+//! rules, and we generally want to use those addresses more often than we name
+//! them. This crate provides the utilities for safely accessing memory mapped
+//! hardware, while preventing the compiler from optimizing our memory accesses
+//! away.
+//!
 //! For example, on the GBA there's a palette of 256 background color values
 //! (`u16`) starting at `0x500_0000`, so you might write something like.
 //!
@@ -136,8 +142,11 @@ use typenum::marker_traits::Unsigned;
 ///   `T`, regardless of the state of the memory mapped hardware. If there's any
 ///   doubt at all, you must instead read or write an unsigned int of the
 ///   correct bit size (`u16`, `u32`, etc) and then parse the bits by hand.
-/// * The declared address must be a part of the address space that Rust's
-///   allocator and/or stack frames will never use.
+/// * Any `VolAddress` declared as a compile time `const` must not use a
+///   location that would ever be part of any allocator and/or stack frame.
+/// * Any `VolAddress` made at runtime from a `*mut` pointer is only valid as
+///   long as that `*mut` would be valid, _this is not tracked_ because pointers
+///   don't have lifetimes.
 ///
 /// If you're not sure about any of those points, please re-read the hardware
 /// specs of your target device and its memory map until you know for sure.
