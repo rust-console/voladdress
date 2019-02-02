@@ -6,6 +6,9 @@
 
 **Nightly Only**
 
+* Uses the `const_fn` feature to allow the use of marker trait bounds in `const`
+  functions.
+
 # voladdress
 
 Allows for proper and easy handling of volatile memory addresses.
