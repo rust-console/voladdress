@@ -3,7 +3,7 @@
 #![forbid(missing_docs)]
 #![forbid(missing_debug_implementations)]
 
-//! This is a crate that makes it easy to work with volatile memory addresses
+//! **voladdress** is a crate that makes it easy to work with volatile memory addresses
 //! (eg: memory mapped hardware).
 //!
 //! For example, on the GBA there's a palette of 256 background color values
