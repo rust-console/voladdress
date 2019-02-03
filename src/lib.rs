@@ -494,7 +494,44 @@ impl<T> Iterator for VolIter<T> {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
-  // TODO: a lot of other method overrides to make this optimized.
+  fn count(self) -> usize {
+    self.slots_remaining
+  }
+
+  fn last(self) -> Option<Self::Item> {
+    if self.slots_remaining > 0 {
+      Some(unsafe {
+        self.vol_address.offset(self.slots_remaining as isize)
+      })
+    } else {
+      None
+    }
+  }
+
+  fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    if self.slots_remaining > n {
+      // somewhere in bounds
+      unsafe {
+        let out = self.vol_address.offset(n as isize);
+        let jump = n+1;
+        self.slots_remaining -= jump;
+        self.vol_address = self.vol_address.offset(jump as isize);
+        Some(out)
+      }
+    } else {
+      // out of bounds!
+      self.slots_remaining = 0;
+      None
+    }
+  }
+
+  fn max(self) -> Option<Self::Item> {
+    self.last()
+  }
+
+  fn min(mut self) -> Option<Self::Item> {
+    self.nth(0)
+  }
 }
 impl<T> FusedIterator for VolIter<T> {}
 impl<T> core::fmt::Debug for VolIter<T> {
@@ -545,7 +582,44 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
-  // TODO: a lot of other method overrides to make this optimized.
+  fn count(self) -> usize {
+    self.slots_remaining
+  }
+
+  fn last(self) -> Option<Self::Item> {
+    if self.slots_remaining > 0 {
+      Some(unsafe {
+        self.vol_address.cast::<u8>().offset(S::ISIZE * (self.slots_remaining as isize)).cast::<T>()
+      })
+    } else {
+      None
+    }
+  }
+
+  fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    if self.slots_remaining > n {
+      // somewhere in bounds
+      unsafe {
+        let out = self.vol_address.cast::<u8>().offset(S::ISIZE * (n as isize)).cast::<T>();
+        let jump = n+1;
+        self.slots_remaining -= jump;
+        self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE * (jump as isize)).cast::<T>();
+        Some(out)
+      }
+    } else {
+      // out of bounds!
+      self.slots_remaining = 0;
+      None
+    }
+  }
+
+  fn max(self) -> Option<Self::Item> {
+    self.last()
+  }
+
+  fn min(mut self) -> Option<Self::Item> {
+    self.nth(0)
+  }
 }
 impl<T, S: Unsigned> FusedIterator for VolStridingIter<T, S> {}
 impl<T, S: Unsigned> core::fmt::Debug for VolStridingIter<T, S> {
