@@ -9,7 +9,7 @@ keywords = ["volatile", "address"]
 edition = "2018"
 license = "0BSD"
 
-publish = false
+#publish = false
 
 [dependencies]
 typenum = "1.10"
