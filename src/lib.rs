@@ -1,19 +1,29 @@
 // Note(Lokathor): Required to allow for marker trait bounds on const functions.
+#![no_std]
 #![feature(const_fn)]
 #![forbid(missing_docs)]
 #![forbid(missing_debug_implementations)]
+#![allow(clippy::len_without_is_empty)]
 
 //! `voladdress` is a crate that makes it easy to work with volatile memory
 //! addresses (eg: memory mapped hardware).
 //!
-//! Specific memory mapped hardware addresses may have particular read and write
-//! rules, and we generally want to use those addresses more often than we name
-//! them. This crate provides the utilities for safely accessing memory mapped
-//! hardware, while preventing the compiler from optimizing our memory accesses
-//! away.
+//! When working with volatile memory, it's assumed that you'll generally be
+//! working with one or more of:
 //!
-//! For example, on the GBA there's a palette of 256 background color values
-//! (`u16`) starting at `0x500_0000`, so you might write something like.
+//! * A single address (`VolAddress`)
+//! * A block of contiguous memory addresses (`VolBlock`)
+//! * A series of evenly strided memory addresses (`VolSeries`)
+//!
+//! All the types have `unsafe` _creation_ and then safe _use_, so that the
+//! actual usage is as ergonomic as possible. Obviously you tend to use an
+//! address far more often than you name an address, so that should be the best
+//! part of the experience. Iterators are also provided for the `VolBlock` and
+//! `VolSeries` types.
+//!
+//! For example, on the GBA there's a palette of 256  color values (`u16`) for
+//! the background palette starting at `0x500_0000`, so you might write
+//! something like
 //!
 //! ```rust
 //! use typenum::consts::U256;
@@ -74,24 +84,21 @@
 //! VolatileCell<u16>`), but then you have to dereference that raw pointer _each
 //! time_ you call read or write, and it always requires parenthesis too,
 //! because of prescience rules (eg: `let a = (*p).read();`). You end up with
-//! `unsafe` blocks and parens and asterisks all over the code for no reason.
+//! `unsafe` blocks and parens and asterisks all over the code for no benefit.
 //!
 //! This crate is much better than any of that. Once you've decided that the
 //! initial unsafety is alright, and you've created a `VolAddress` value for
 //! your target type at the target address, the `read` and `write` methods are
 //! entirely safe to use and don't require the manual de-reference.
 //!
-//! # Can't you just impl `Deref` and `DerefMut` on these things?
+//! # Can't you impl `Deref`/`DerefMut` and `Index`/`IndexMut` on these things?
 //!
-//! No. Absolutely not. Both `&T` and `&mut T` use normal reads and writes, so
-//! they'll elide the access just like a raw pointer would. In fact they're
-//! _more_ aggressive about it than raw pointers are because they assume that
-//! either the target value never changes (`&T`) so you don't ever need to read
-//! twice, or the target value is exclusively controlled by the local scope
-//! (`&mut T`) so you never need to do intermediate writes. For standard code
-//! this is exactly what we want (it makes the code faster to skip reads and
-//! writes we don't need), but with memory mapped hardware this is the opposite
-//! of a good time.
+//! No. Absolutely not. They all return `&T` or `&mut T`, which use normal reads
+//! and writes, so the accesses can be elided by the compiler. In fact
+//! references end up being _more_ aggressive about access elision than happens
+//! raw pointers. For standard code this is exactly what we want (it makes the
+//! code faster to skip reads and writes we don't need), but with memory mapped
+//! hardware this is the opposite of a good time.
 
 use core::{cmp::Ordering, iter::FusedIterator, marker::PhantomData, num::NonZeroUsize};
 use typenum::marker_traits::Unsigned;
@@ -107,10 +114,6 @@ use typenum::marker_traits::Unsigned;
 /// If you're trying to do anything other than abstract a memory mapped hardware
 /// device then you probably want one of the many other smart pointer types in
 /// the standard library.
-///
-/// The design of this type is set up so that _creation_ is unsafe, and _use_ is
-/// safe. This is the opposite of a raw pointer, but it gives an optimal
-/// experience. You'll use volatile addresses a lot more than you create them.
 ///
 /// It's generally expected that you'll create `VolAddress` values by declaring
 /// `const` globals at various points in your code for the various memory
@@ -493,7 +496,44 @@ impl<T> Iterator for VolIter<T> {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
-  // TODO: a lot of other method overrides to make this optimized.
+  fn count(self) -> usize {
+    self.slots_remaining
+  }
+
+  fn last(self) -> Option<Self::Item> {
+    if self.slots_remaining > 0 {
+      Some(unsafe {
+        self.vol_address.offset(self.slots_remaining as isize)
+      })
+    } else {
+      None
+    }
+  }
+
+  fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    if self.slots_remaining > n {
+      // somewhere in bounds
+      unsafe {
+        let out = self.vol_address.offset(n as isize);
+        let jump = n+1;
+        self.slots_remaining -= jump;
+        self.vol_address = self.vol_address.offset(jump as isize);
+        Some(out)
+      }
+    } else {
+      // out of bounds!
+      self.slots_remaining = 0;
+      None
+    }
+  }
+
+  fn max(self) -> Option<Self::Item> {
+    self.last()
+  }
+
+  fn min(mut self) -> Option<Self::Item> {
+    self.nth(0)
+  }
 }
 impl<T> FusedIterator for VolIter<T> {}
 impl<T> core::fmt::Debug for VolIter<T> {
@@ -544,7 +584,44 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
-  // TODO: a lot of other method overrides to make this optimized.
+  fn count(self) -> usize {
+    self.slots_remaining
+  }
+
+  fn last(self) -> Option<Self::Item> {
+    if self.slots_remaining > 0 {
+      Some(unsafe {
+        self.vol_address.cast::<u8>().offset(S::ISIZE * (self.slots_remaining as isize)).cast::<T>()
+      })
+    } else {
+      None
+    }
+  }
+
+  fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    if self.slots_remaining > n {
+      // somewhere in bounds
+      unsafe {
+        let out = self.vol_address.cast::<u8>().offset(S::ISIZE * (n as isize)).cast::<T>();
+        let jump = n+1;
+        self.slots_remaining -= jump;
+        self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE * (jump as isize)).cast::<T>();
+        Some(out)
+      }
+    } else {
+      // out of bounds!
+      self.slots_remaining = 0;
+      None
+    }
+  }
+
+  fn max(self) -> Option<Self::Item> {
+    self.last()
+  }
+
+  fn min(mut self) -> Option<Self::Item> {
+    self.nth(0)
+  }
 }
 impl<T, S: Unsigned> FusedIterator for VolStridingIter<T, S> {}
 impl<T, S: Unsigned> core::fmt::Debug for VolStridingIter<T, S> {
