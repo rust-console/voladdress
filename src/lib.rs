@@ -2,6 +2,7 @@
 #![feature(const_fn)]
 #![forbid(missing_docs)]
 #![forbid(missing_debug_implementations)]
+#![no_std]
 
 //! `voladdress` is a crate that makes it easy to work with volatile memory
 //! addresses (eg: memory mapped hardware).
