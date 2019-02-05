@@ -88,7 +88,7 @@ impl<T> WOVolAddress<T> {
   }
 
   /// The `usize` value of this `WOVolAddress`.
-  pub const fn as_usize(self) -> usize {
+  pub const fn to_usize(self) -> usize {
     self.address.get()
   }
 

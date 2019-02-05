@@ -250,7 +250,7 @@ impl<T> VolAddress<T> {
   }
 
   /// The `usize` value of this `VolAddress`.
-  pub const fn as_usize(self) -> usize {
+  pub const fn to_usize(self) -> usize {
     self.address.get()
   }
 

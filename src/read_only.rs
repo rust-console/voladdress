@@ -88,7 +88,7 @@ impl<T> ROVolAddress<T> {
   }
 
   /// The `usize` value of this `ROVolAddress`.
-  pub const fn as_usize(self) -> usize {
+  pub const fn to_usize(self) -> usize {
     self.address.get()
   }
 
