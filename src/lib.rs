@@ -103,6 +103,9 @@
 use core::{cmp::Ordering, iter::FusedIterator, marker::PhantomData, num::NonZeroUsize};
 use typenum::marker_traits::Unsigned;
 
+pub mod read_only;
+pub mod write_only;
+
 // Note(Lokathor): We have to hand implement all the traits for all of our types
 // manually because if we use `derive` then they only get derived if the `T` has
 // that trait. However, since we're acting like various "pointers" to `T`
@@ -203,7 +206,7 @@ impl<T> VolAddress<T> {
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
   pub const unsafe fn new(address: usize) -> Self {
-    VolAddress {
+    Self {
       address: NonZeroUsize::new_unchecked(address),
       marker: PhantomData,
     }
@@ -215,6 +218,7 @@ impl<T> VolAddress<T> {
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
   pub const unsafe fn cast<Z>(self) -> VolAddress<Z> {
+    // Note(Lokathor): This can't be `Self` because the type parameter changes.
     VolAddress {
       address: self.address,
       marker: PhantomData,
@@ -227,7 +231,7 @@ impl<T> VolAddress<T> {
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
   pub const unsafe fn offset(self, offset: isize) -> Self {
-    VolAddress {
+    Self {
       address: NonZeroUsize::new_unchecked(self.address.get().wrapping_add(offset as usize * core::mem::size_of::<T>())),
       marker: PhantomData,
     }
@@ -245,13 +249,21 @@ impl<T> VolAddress<T> {
     self.address.get() % core::mem::align_of::<T>() == 0
   }
 
+  /// The `usize` value of this `VolAddress`.
+  pub const fn to_usize(self) -> usize {
+    self.address.get()
+  }
+
   /// Makes an iterator starting here across the given number of slots.
   ///
   /// # Safety
   ///
   /// The normal safety rules must be correct for each address iterated over.
   pub const unsafe fn iter_slots(self, slots: usize) -> VolIter<T> {
-    VolIter { vol_address: self, slots_remaining: slots }
+    VolIter {
+      vol_address: self,
+      slots_remaining: slots,
+    }
   }
 
   // non-const and never can be.
@@ -276,8 +288,8 @@ impl<T> VolAddress<T> {
   ///
   /// # Safety
   ///
-  /// This is _not_ a move, it forms a bit duplicate of the current address
-  /// value. If `T` has a `Drop` trait that does anything it is up to you to
+  /// This is _not_ a move, it forms a bit duplicate of the current value at the
+  /// address. If `T` has a `Drop` trait that does anything it is up to you to
   /// ensure that repeated drops do not cause UB (such as a double free).
   pub unsafe fn read_non_copy(self) -> T {
     (self.address.get() as *mut T).read_volatile()
@@ -304,25 +316,24 @@ pub struct VolBlock<T, C: Unsigned> {
   vol_address: VolAddress<T>,
   slot_count: PhantomData<C>,
 }
-impl<T, C:Unsigned> Clone for VolBlock<T, C> {
+impl<T, C: Unsigned> Clone for VolBlock<T, C> {
   fn clone(&self) -> Self {
     *self
   }
 }
-impl<T, C:Unsigned> Copy for VolBlock<T, C> { }
-impl<T, C:Unsigned> PartialEq for VolBlock<T, C> {
+impl<T, C: Unsigned> Copy for VolBlock<T, C> {}
+impl<T, C: Unsigned> PartialEq for VolBlock<T, C> {
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
 }
-impl<T, C:Unsigned> Eq for VolBlock<T, C> {}
-impl<T, C:Unsigned> core::fmt::Debug for VolBlock<T, C> {
+impl<T, C: Unsigned> Eq for VolBlock<T, C> {}
+impl<T, C: Unsigned> core::fmt::Debug for VolBlock<T, C> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolBlock({:p}, count={})",
-      self.vol_address.address.get() as *mut T, C::USIZE)
+    write!(f, "VolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, C::USIZE)
   }
 }
-impl<T, C:Unsigned> VolBlock<T, C> {
+impl<T, C: Unsigned> VolBlock<T, C> {
   /// Constructs a new `VolBlock`.
   ///
   /// # Safety
@@ -330,7 +341,10 @@ impl<T, C:Unsigned> VolBlock<T, C> {
   /// The given address must be a valid `VolAddress` at each position in the
   /// block for however many slots (`C`).
   pub const unsafe fn new(address: usize) -> Self {
-    Self { vol_address: VolAddress::new(address), slot_count: PhantomData }
+    Self {
+      vol_address: VolAddress::new(address),
+      slot_count: PhantomData,
+    }
   }
 
   /// The length of this block (in elements)
@@ -375,7 +389,7 @@ impl<T, C:Unsigned> VolBlock<T, C> {
 }
 
 /// A series of evenly strided addresses.
-/// 
+///
 /// * The `C` parameter is the element count of the series.
 /// * The `S` parameter is the stride (in bytes) from one element to the next.
 ///
@@ -391,7 +405,7 @@ impl<T, C: Unsigned, S: Unsigned> Clone for VolSeries<T, C, S> {
     *self
   }
 }
-impl<T, C: Unsigned, S: Unsigned> Copy for VolSeries<T, C, S> { }
+impl<T, C: Unsigned, S: Unsigned> Copy for VolSeries<T, C, S> {}
 impl<T, C: Unsigned, S: Unsigned> PartialEq for VolSeries<T, C, S> {
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
@@ -400,8 +414,13 @@ impl<T, C: Unsigned, S: Unsigned> PartialEq for VolSeries<T, C, S> {
 impl<T, C: Unsigned, S: Unsigned> Eq for VolSeries<T, C, S> {}
 impl<T, C: Unsigned, S: Unsigned> core::fmt::Debug for VolSeries<T, C, S> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolSeries({:p}, count={}, series={})",
-      self.vol_address.address.get() as *mut T, C::USIZE, S::USIZE)
+    write!(
+      f,
+      "VolSeries({:p}, count={}, series={})",
+      self.vol_address.address.get() as *mut T,
+      C::USIZE,
+      S::USIZE
+    )
   }
 }
 impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
@@ -412,7 +431,11 @@ impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
   /// The given address must be a valid `VolAddress` at each position in the
   /// series for however many slots (`C`), strided by the selected amount (`S`).
   pub const unsafe fn new(address: usize) -> Self {
-    Self { vol_address: VolAddress::new(address), slot_count: PhantomData, stride: PhantomData }
+    Self {
+      vol_address: VolAddress::new(address),
+      slot_count: PhantomData,
+      stride: PhantomData,
+    }
   }
 
   /// The length of this series (in elements)
@@ -425,7 +448,7 @@ impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
     VolStridingIter {
       vol_address: self.vol_address,
       slots_remaining: C::USIZE,
-      stride: PhantomData
+      stride: PhantomData,
     }
   }
 
@@ -502,9 +525,7 @@ impl<T> Iterator for VolIter<T> {
 
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
-      Some(unsafe {
-        self.vol_address.offset(self.slots_remaining as isize)
-      })
+      Some(unsafe { self.vol_address.offset(self.slots_remaining as isize) })
     } else {
       None
     }
@@ -515,7 +536,7 @@ impl<T> Iterator for VolIter<T> {
       // somewhere in bounds
       unsafe {
         let out = self.vol_address.offset(n as isize);
-        let jump = n+1;
+        let jump = n + 1;
         self.slots_remaining -= jump;
         self.vol_address = self.vol_address.offset(jump as isize);
         Some(out)
@@ -538,8 +559,12 @@ impl<T> Iterator for VolIter<T> {
 impl<T> FusedIterator for VolIter<T> {}
 impl<T> core::fmt::Debug for VolIter<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolIter({:p}, remaining={})",
-      self.vol_address.address.get() as *mut T, self.slots_remaining)
+    write!(
+      f,
+      "VolIter({:p}, remaining={})",
+      self.vol_address.address.get() as *mut T,
+      self.slots_remaining
+    )
   }
 }
 
@@ -554,7 +579,7 @@ impl<T, S: Unsigned> Clone for VolStridingIter<T, S> {
     Self {
       vol_address: self.vol_address,
       slots_remaining: self.slots_remaining,
-      stride: PhantomData
+      stride: PhantomData,
     }
   }
 }
@@ -591,7 +616,11 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       Some(unsafe {
-        self.vol_address.cast::<u8>().offset(S::ISIZE * (self.slots_remaining as isize)).cast::<T>()
+        self
+          .vol_address
+          .cast::<u8>()
+          .offset(S::ISIZE * (self.slots_remaining as isize))
+          .cast::<T>()
       })
     } else {
       None
@@ -603,7 +632,7 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
       // somewhere in bounds
       unsafe {
         let out = self.vol_address.cast::<u8>().offset(S::ISIZE * (n as isize)).cast::<T>();
-        let jump = n+1;
+        let jump = n + 1;
         self.slots_remaining -= jump;
         self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE * (jump as isize)).cast::<T>();
         Some(out)
@@ -626,7 +655,12 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
 impl<T, S: Unsigned> FusedIterator for VolStridingIter<T, S> {}
 impl<T, S: Unsigned> core::fmt::Debug for VolStridingIter<T, S> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolStridingIter({:p}, remaining={}, stride={})",
-      self.vol_address.address.get() as *mut T, self.slots_remaining, S::USIZE)
+    write!(
+      f,
+      "VolStridingIter({:p}, remaining={}, stride={})",
+      self.vol_address.address.get() as *mut T,
+      self.slots_remaining,
+      S::USIZE
+    )
   }
 }
