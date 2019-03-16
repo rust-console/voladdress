@@ -80,11 +80,12 @@
 //! There are other crates that address the general issue of volatile memory,
 //! but none that I've seen are as easy to use as this one. They generally
 //! expect you to cast the target address (a `usize` that you get out of your
-//! hardware manual) into their crate's volatile type (eg: `let p = 1234 as *mut
-//! VolatileCell<u16>`), but then you have to dereference that raw pointer _each
-//! time_ you call read or write, and it always requires parenthesis too,
-//! because of prescience rules (eg: `let a = (*p).read();`). You end up with
-//! `unsafe` blocks and parens and asterisks all over the code for no benefit.
+//! hardware manual) into a raw pointer to their crate's volatile type (eg: `let
+//! p = 1234 as *mut VolatileCell<u16>`), but then you have to dereference that
+//! raw pointer _each time_ you call read or write, and it always requires
+//! parenthesis too, because of prescience rules (eg: `let a = (*p).read();`).
+//! You end up with `unsafe` blocks and parens and asterisks all over the code
+//! for no benefit.
 //!
 //! This crate is much better than any of that. Once you've decided that the
 //! initial unsafety is alright, and you've created a `VolAddress` value for
