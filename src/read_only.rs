@@ -10,23 +10,27 @@ pub struct ROVolAddress<T> {
   marker: PhantomData<*mut T>,
 }
 impl<T> Clone for ROVolAddress<T> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
 impl<T> Copy for ROVolAddress<T> {}
 impl<T> PartialEq for ROVolAddress<T> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.address == other.address
   }
 }
 impl<T> Eq for ROVolAddress<T> {}
 impl<T> PartialOrd for ROVolAddress<T> {
+  #[inline(always)]
   fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
     Some(self.address.cmp(&other.address))
   }
 }
 impl<T> Ord for ROVolAddress<T> {
+  #[inline(always)]
   fn cmp(&self, other: &Self) -> Ordering {
     self.address.cmp(&other.address)
   }
@@ -49,6 +53,7 @@ impl<T> ROVolAddress<T> {
   /// # Safety
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
+  #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       address: NonZeroUsize::new_unchecked(address),
@@ -61,6 +66,7 @@ impl<T> ROVolAddress<T> {
   /// # Safety
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
+  #[inline(always)]
   pub const unsafe fn cast<Z>(self) -> ROVolAddress<Z> {
     // Note(Lokathor): This can't be `Self` because the type parameter changes.
     ROVolAddress {
@@ -74,6 +80,7 @@ impl<T> ROVolAddress<T> {
   /// # Safety
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
+  #[inline(always)]
   pub const unsafe fn offset(self, offset: isize) -> Self {
     Self {
       address: NonZeroUsize::new_unchecked(self.address.get().wrapping_add(offset as usize * core::mem::size_of::<T>())),
@@ -83,11 +90,13 @@ impl<T> ROVolAddress<T> {
 
   /// Checks that the current target type of this address is aligned at this
   /// address value.
+  #[inline(always)]
   pub const fn is_aligned(self) -> bool {
     self.address.get() % core::mem::align_of::<T>() == 0
   }
 
   /// The `usize` value of this `ROVolAddress`.
+  #[inline(always)]
   pub const fn to_usize(self) -> usize {
     self.address.get()
   }
@@ -97,6 +106,7 @@ impl<T> ROVolAddress<T> {
   /// # Safety
   ///
   /// The normal safety rules must be correct for each address iterated over.
+  #[inline(always)]
   pub const unsafe fn iter_slots(self, slots: usize) -> ROVolIter<T> {
     ROVolIter {
       vol_address: self,
@@ -107,6 +117,7 @@ impl<T> ROVolAddress<T> {
   // non-const and never can be.
 
   /// Volatile reads a `Copy` value out of the address.
+  #[inline(always)]
   pub fn read(self) -> T
   where
     T: Copy,
@@ -121,6 +132,7 @@ impl<T> ROVolAddress<T> {
   /// This is _not_ a move, it forms a bit duplicate of the current value at the
   /// address. If `T` has a `Drop` trait that does anything it is up to you to
   /// ensure that repeated drops do not cause UB (such as a double free).
+  #[inline(always)]
   pub unsafe fn read_non_copy(self) -> T {
     (self.address.get() as *mut T).read_volatile()
   }
@@ -134,12 +146,14 @@ pub struct ROVolBlock<T, C: Unsigned> {
   slot_count: PhantomData<C>,
 }
 impl<T, C: Unsigned> Clone for ROVolBlock<T, C> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
 impl<T, C: Unsigned> Copy for ROVolBlock<T, C> {}
 impl<T, C: Unsigned> PartialEq for ROVolBlock<T, C> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
@@ -157,6 +171,7 @@ impl<T, C: Unsigned> ROVolBlock<T, C> {
   ///
   /// The given address must be a valid `ROVolAddress` at each position in the
   /// block for however many slots (`C`).
+  #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: ROVolAddress::new(address),
@@ -165,11 +180,13 @@ impl<T, C: Unsigned> ROVolBlock<T, C> {
   }
 
   /// The length of this block (in elements)
+  #[inline(always)]
   pub const fn len(self) -> usize {
     C::USIZE
   }
 
   /// Gives an iterator over the slots of this block.
+  #[inline(always)]
   pub const fn iter(self) -> ROVolIter<T> {
     ROVolIter {
       vol_address: self.vol_address,
@@ -182,11 +199,14 @@ impl<T, C: Unsigned> ROVolBlock<T, C> {
   /// # Safety
   ///
   /// The slot given must be in bounds.
+  #[inline(always)]
   pub const unsafe fn index_unchecked(self, slot: usize) -> ROVolAddress<T> {
     self.vol_address.offset(slot as isize)
   }
 
-  /// Checked "indexing" style access of the block, giving either a `ROVolAddress` or a panic.
+  /// Checked "indexing" style access of the block, giving either a
+  /// `ROVolAddress` or a panic.
+  #[inline(always)]
   pub fn index(self, slot: usize) -> ROVolAddress<T> {
     if slot < C::USIZE {
       unsafe { self.index_unchecked(slot) }
@@ -196,6 +216,7 @@ impl<T, C: Unsigned> ROVolBlock<T, C> {
   }
 
   /// Checked "getting" style access of the block, giving an Option value.
+  #[inline(always)]
   pub fn get(self, slot: usize) -> Option<ROVolAddress<T>> {
     if slot < C::USIZE {
       unsafe { Some(self.index_unchecked(slot)) }
@@ -215,12 +236,14 @@ pub struct ROVolSeries<T, C: Unsigned, S: Unsigned> {
   stride: PhantomData<S>,
 }
 impl<T, C: Unsigned, S: Unsigned> Clone for ROVolSeries<T, C, S> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
 impl<T, C: Unsigned, S: Unsigned> Copy for ROVolSeries<T, C, S> {}
 impl<T, C: Unsigned, S: Unsigned> PartialEq for ROVolSeries<T, C, S> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
@@ -244,6 +267,7 @@ impl<T, C: Unsigned, S: Unsigned> ROVolSeries<T, C, S> {
   ///
   /// The given address must be a valid `ROVolAddress` at each position in the
   /// series for however many slots (`C`), strided by the selected amount (`S`).
+  #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: ROVolAddress::new(address),
@@ -253,11 +277,13 @@ impl<T, C: Unsigned, S: Unsigned> ROVolSeries<T, C, S> {
   }
 
   /// The length of this series (in elements)
+  #[inline(always)]
   pub const fn len(self) -> usize {
     C::USIZE
   }
 
   /// Gives an iterator over the slots of this series.
+  #[inline(always)]
   pub const fn iter(self) -> ROVolStridingIter<T, S> {
     ROVolStridingIter {
       vol_address: self.vol_address,
@@ -271,11 +297,14 @@ impl<T, C: Unsigned, S: Unsigned> ROVolSeries<T, C, S> {
   /// # Safety
   ///
   /// The slot given must be in bounds.
+  #[inline(always)]
   pub const unsafe fn index_unchecked(self, slot: usize) -> ROVolAddress<T> {
     self.vol_address.cast::<u8>().offset((S::USIZE * slot) as isize).cast::<T>()
   }
 
-  /// Checked "indexing" style access into the series, giving either a `ROVolAddress` or a panic.
+  /// Checked "indexing" style access into the series, giving either a
+  /// `ROVolAddress` or a panic.
+  #[inline(always)]
   pub fn index(self, slot: usize) -> ROVolAddress<T> {
     if slot < C::USIZE {
       unsafe { self.index_unchecked(slot) }
@@ -285,6 +314,7 @@ impl<T, C: Unsigned, S: Unsigned> ROVolSeries<T, C, S> {
   }
 
   /// Checked "getting" style access into the series, giving an Option value.
+  #[inline(always)]
   pub fn get(self, slot: usize) -> Option<ROVolAddress<T>> {
     if slot < C::USIZE {
       unsafe { Some(self.index_unchecked(slot)) }
@@ -300,6 +330,7 @@ pub struct ROVolIter<T> {
   slots_remaining: usize,
 }
 impl<T> Clone for ROVolIter<T> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     Self {
       vol_address: self.vol_address,
@@ -308,6 +339,7 @@ impl<T> Clone for ROVolIter<T> {
   }
 }
 impl<T> PartialEq for ROVolIter<T> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address && self.slots_remaining == other.slots_remaining
   }
@@ -316,6 +348,7 @@ impl<T> Eq for ROVolIter<T> {}
 impl<T> Iterator for ROVolIter<T> {
   type Item = ROVolAddress<T>;
 
+  #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       let out = self.vol_address;
@@ -329,14 +362,17 @@ impl<T> Iterator for ROVolIter<T> {
     }
   }
 
+  #[inline(always)]
   fn size_hint(&self) -> (usize, Option<usize>) {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
+  #[inline(always)]
   fn count(self) -> usize {
     self.slots_remaining
   }
 
+  #[inline(always)]
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       Some(unsafe { self.vol_address.offset(self.slots_remaining as isize) })
@@ -345,6 +381,7 @@ impl<T> Iterator for ROVolIter<T> {
     }
   }
 
+  #[inline]
   fn nth(&mut self, n: usize) -> Option<Self::Item> {
     if self.slots_remaining > n {
       // somewhere in bounds
@@ -362,10 +399,12 @@ impl<T> Iterator for ROVolIter<T> {
     }
   }
 
+  #[inline(always)]
   fn max(self) -> Option<Self::Item> {
     self.last()
   }
 
+  #[inline(always)]
   fn min(mut self) -> Option<Self::Item> {
     self.nth(0)
   }
@@ -389,6 +428,7 @@ pub struct ROVolStridingIter<T, S: Unsigned> {
   stride: PhantomData<S>,
 }
 impl<T, S: Unsigned> Clone for ROVolStridingIter<T, S> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     Self {
       vol_address: self.vol_address,
@@ -398,6 +438,7 @@ impl<T, S: Unsigned> Clone for ROVolStridingIter<T, S> {
   }
 }
 impl<T, S: Unsigned> PartialEq for ROVolStridingIter<T, S> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address && self.slots_remaining == other.slots_remaining
   }
@@ -406,6 +447,7 @@ impl<T, S: Unsigned> Eq for ROVolStridingIter<T, S> {}
 impl<T, S: Unsigned> Iterator for ROVolStridingIter<T, S> {
   type Item = ROVolAddress<T>;
 
+  #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       let out = self.vol_address;
@@ -419,14 +461,17 @@ impl<T, S: Unsigned> Iterator for ROVolStridingIter<T, S> {
     }
   }
 
+  #[inline(always)]
   fn size_hint(&self) -> (usize, Option<usize>) {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
+  #[inline(always)]
   fn count(self) -> usize {
     self.slots_remaining
   }
 
+  #[inline(always)]
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       Some(unsafe {
@@ -441,6 +486,7 @@ impl<T, S: Unsigned> Iterator for ROVolStridingIter<T, S> {
     }
   }
 
+  #[inline]
   fn nth(&mut self, n: usize) -> Option<Self::Item> {
     if self.slots_remaining > n {
       // somewhere in bounds
@@ -458,10 +504,12 @@ impl<T, S: Unsigned> Iterator for ROVolStridingIter<T, S> {
     }
   }
 
+  #[inline(always)]
   fn max(self) -> Option<Self::Item> {
     self.last()
   }
 
+  #[inline(always)]
   fn min(mut self) -> Option<Self::Item> {
     self.nth(0)
   }

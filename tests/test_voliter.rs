@@ -1,4 +1,3 @@
-
 use voladdress::{VolAddress, VolIter};
 
 #[test]
@@ -15,10 +14,10 @@ fn test_size_hint_and_next() {
 
   assert_eq!(i.next().unwrap(), unsafe { VolAddress::new(0x4) });
   assert_eq!(i.size_hint(), (1, Some(1)));
-  
+
   assert_eq!(i.next().unwrap(), unsafe { VolAddress::new(0x8) });
   assert_eq!(i.size_hint(), (0, Some(0)));
-  
+
   assert!(i.next().is_none());
   assert_eq!(i.size_hint(), (0, Some(0)));
 }
@@ -36,7 +35,7 @@ fn test_last() {
   let a: VolAddress<i32> = unsafe { VolAddress::new(4) };
   let i: VolIter<i32> = unsafe { a.iter_slots(2) };
 
-  assert_eq!(i.last(), Some(unsafe { VolAddress::new(4 + 2*4) }));
+  assert_eq!(i.last(), Some(unsafe { VolAddress::new(4 + 2 * 4) }));
 
   let mut i: VolIter<i32> = unsafe { a.iter_slots(2) };
   i.next();
@@ -53,7 +52,7 @@ fn test_nth() {
   assert_eq!(i.nth(0), i2.next());
   assert_eq!(i.nth(0), i2.next());
   assert_eq!(i.nth(0), i2.next());
-  
+
   let mut i: VolIter<i32> = unsafe { a.iter_slots(2) };
   assert_eq!(i.nth(0), Some(unsafe { VolAddress::new(4) }));
 

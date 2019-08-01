@@ -1,6 +1,12 @@
 
 # Changelog
 
+## v0.2.4
+
+* After seeing results in profiling when using `opt-level=s`, added
+  `#[inline(always)]` to essentially every function, since they're almost all
+  single expression wrapper.
+
 ## v0.2.3
 
 * Just fixed a docs typo

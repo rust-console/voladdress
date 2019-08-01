@@ -1,6 +1,5 @@
-
-use voladdress::VolSeries;
 use typenum::consts::{U16, U256};
+use voladdress::VolSeries;
 
 const DUMMY: VolSeries<i32, U256, U16> = unsafe { VolSeries::new(4) };
 
@@ -22,7 +21,7 @@ fn test_indexing_styles() {
   let b1 = DUMMY.index(1);
   assert_eq!(a1, b1);
 
-  for i in 0 .. DUMMY.len() {
+  for i in 0..DUMMY.len() {
     assert_eq!(DUMMY.get(i).unwrap(), DUMMY.index(i));
   }
   assert!(DUMMY.get(DUMMY.len()).is_none());

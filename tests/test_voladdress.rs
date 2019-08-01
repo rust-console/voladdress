@@ -1,4 +1,3 @@
-
 use voladdress::VolAddress;
 
 #[test]

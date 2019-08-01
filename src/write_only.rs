@@ -10,23 +10,27 @@ pub struct WOVolAddress<T> {
   marker: PhantomData<*mut T>,
 }
 impl<T> Clone for WOVolAddress<T> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
 impl<T> Copy for WOVolAddress<T> {}
 impl<T> PartialEq for WOVolAddress<T> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.address == other.address
   }
 }
 impl<T> Eq for WOVolAddress<T> {}
 impl<T> PartialOrd for WOVolAddress<T> {
+  #[inline(always)]
   fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
     Some(self.address.cmp(&other.address))
   }
 }
 impl<T> Ord for WOVolAddress<T> {
+  #[inline(always)]
   fn cmp(&self, other: &Self) -> Ordering {
     self.address.cmp(&other.address)
   }
@@ -49,6 +53,7 @@ impl<T> WOVolAddress<T> {
   /// # Safety
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
+  #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       address: NonZeroUsize::new_unchecked(address),
@@ -61,6 +66,7 @@ impl<T> WOVolAddress<T> {
   /// # Safety
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
+  #[inline(always)]
   pub const unsafe fn cast<Z>(self) -> WOVolAddress<Z> {
     // Note(Lokathor): This can't be `Self` because the type parameter changes.
     WOVolAddress {
@@ -74,6 +80,7 @@ impl<T> WOVolAddress<T> {
   /// # Safety
   ///
   /// You must follow the standard safety rules as outlined in the type docs.
+  #[inline(always)]
   pub const unsafe fn offset(self, offset: isize) -> Self {
     Self {
       address: NonZeroUsize::new_unchecked(self.address.get().wrapping_add(offset as usize * core::mem::size_of::<T>())),
@@ -83,11 +90,13 @@ impl<T> WOVolAddress<T> {
 
   /// Checks that the current target type of this address is aligned at this
   /// address value.
+  #[inline(always)]
   pub const fn is_aligned(self) -> bool {
     self.address.get() % core::mem::align_of::<T>() == 0
   }
 
   /// The `usize` value of this `WOVolAddress`.
+  #[inline(always)]
   pub const fn to_usize(self) -> usize {
     self.address.get()
   }
@@ -97,6 +106,7 @@ impl<T> WOVolAddress<T> {
   /// # Safety
   ///
   /// The normal safety rules must be correct for each address iterated over.
+  #[inline(always)]
   pub const unsafe fn iter_slots(self, slots: usize) -> WOVolIter<T> {
     WOVolIter {
       vol_address: self,
@@ -110,6 +120,7 @@ impl<T> WOVolAddress<T> {
   /// if `T` has a `Drop` impl then that will never get executed. This is "safe"
   /// under Rust's safety rules, but could cause something unintended (eg: a
   /// memory leak).
+  #[inline(always)]
   pub fn write(self, val: T) {
     unsafe { (self.address.get() as *mut T).write_volatile(val) }
   }
@@ -123,12 +134,14 @@ pub struct WOVolBlock<T, C: Unsigned> {
   slot_count: PhantomData<C>,
 }
 impl<T, C: Unsigned> Clone for WOVolBlock<T, C> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
 impl<T, C: Unsigned> Copy for WOVolBlock<T, C> {}
 impl<T, C: Unsigned> PartialEq for WOVolBlock<T, C> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
@@ -146,6 +159,7 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   ///
   /// The given address must be a valid `WOVolAddress` at each position in the
   /// block for however many slots (`C`).
+  #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: WOVolAddress::new(address),
@@ -154,11 +168,13 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   }
 
   /// The length of this block (in elements)
+  #[inline(always)]
   pub const fn len(self) -> usize {
     C::USIZE
   }
 
   /// Gives an iterator over the slots of this block.
+  #[inline(always)]
   pub const fn iter(self) -> WOVolIter<T> {
     WOVolIter {
       vol_address: self.vol_address,
@@ -171,11 +187,14 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   /// # Safety
   ///
   /// The slot given must be in bounds.
+  #[inline(always)]
   pub const unsafe fn index_unchecked(self, slot: usize) -> WOVolAddress<T> {
     self.vol_address.offset(slot as isize)
   }
 
-  /// Checked "indexing" style access of the block, giving either a `WOVolAddress` or a panic.
+  /// Checked "indexing" style access of the block, giving either a
+  /// `WOVolAddress` or a panic.
+  #[inline(always)]
   pub fn index(self, slot: usize) -> WOVolAddress<T> {
     if slot < C::USIZE {
       unsafe { self.index_unchecked(slot) }
@@ -185,6 +204,7 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   }
 
   /// Checked "getting" style access of the block, giving an Option value.
+  #[inline(always)]
   pub fn get(self, slot: usize) -> Option<WOVolAddress<T>> {
     if slot < C::USIZE {
       unsafe { Some(self.index_unchecked(slot)) }
@@ -204,12 +224,14 @@ pub struct WOVolSeries<T, C: Unsigned, S: Unsigned> {
   stride: PhantomData<S>,
 }
 impl<T, C: Unsigned, S: Unsigned> Clone for WOVolSeries<T, C, S> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
 impl<T, C: Unsigned, S: Unsigned> Copy for WOVolSeries<T, C, S> {}
 impl<T, C: Unsigned, S: Unsigned> PartialEq for WOVolSeries<T, C, S> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
@@ -233,6 +255,7 @@ impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
   ///
   /// The given address must be a valid `WOVolAddress` at each position in the
   /// series for however many slots (`C`), strided by the selected amount (`S`).
+  #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: WOVolAddress::new(address),
@@ -242,11 +265,13 @@ impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
   }
 
   /// The length of this series (in elements)
+  #[inline(always)]
   pub const fn len(self) -> usize {
     C::USIZE
   }
 
   /// Gives an iterator over the slots of this series.
+  #[inline(always)]
   pub const fn iter(self) -> WOVolStridingIter<T, S> {
     WOVolStridingIter {
       vol_address: self.vol_address,
@@ -260,11 +285,14 @@ impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
   /// # Safety
   ///
   /// The slot given must be in bounds.
+  #[inline(always)]
   pub const unsafe fn index_unchecked(self, slot: usize) -> WOVolAddress<T> {
     self.vol_address.cast::<u8>().offset((S::USIZE * slot) as isize).cast::<T>()
   }
 
-  /// Checked "indexing" style access into the series, giving either a `WOVolAddress` or a panic.
+  /// Checked "indexing" style access into the series, giving either a
+  /// `WOVolAddress` or a panic.
+  #[inline(always)]
   pub fn index(self, slot: usize) -> WOVolAddress<T> {
     if slot < C::USIZE {
       unsafe { self.index_unchecked(slot) }
@@ -274,6 +302,7 @@ impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
   }
 
   /// Checked "getting" style access into the series, giving an Option value.
+  #[inline(always)]
   pub fn get(self, slot: usize) -> Option<WOVolAddress<T>> {
     if slot < C::USIZE {
       unsafe { Some(self.index_unchecked(slot)) }
@@ -289,6 +318,7 @@ pub struct WOVolIter<T> {
   slots_remaining: usize,
 }
 impl<T> Clone for WOVolIter<T> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     Self {
       vol_address: self.vol_address,
@@ -297,6 +327,7 @@ impl<T> Clone for WOVolIter<T> {
   }
 }
 impl<T> PartialEq for WOVolIter<T> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address && self.slots_remaining == other.slots_remaining
   }
@@ -305,6 +336,7 @@ impl<T> Eq for WOVolIter<T> {}
 impl<T> Iterator for WOVolIter<T> {
   type Item = WOVolAddress<T>;
 
+  #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       let out = self.vol_address;
@@ -318,14 +350,17 @@ impl<T> Iterator for WOVolIter<T> {
     }
   }
 
+  #[inline(always)]
   fn size_hint(&self) -> (usize, Option<usize>) {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
+  #[inline(always)]
   fn count(self) -> usize {
     self.slots_remaining
   }
 
+  #[inline(always)]
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       Some(unsafe { self.vol_address.offset(self.slots_remaining as isize) })
@@ -334,6 +369,7 @@ impl<T> Iterator for WOVolIter<T> {
     }
   }
 
+  #[inline]
   fn nth(&mut self, n: usize) -> Option<Self::Item> {
     if self.slots_remaining > n {
       // somewhere in bounds
@@ -351,10 +387,12 @@ impl<T> Iterator for WOVolIter<T> {
     }
   }
 
+  #[inline(always)]
   fn max(self) -> Option<Self::Item> {
     self.last()
   }
 
+  #[inline(always)]
   fn min(mut self) -> Option<Self::Item> {
     self.nth(0)
   }
@@ -378,6 +416,7 @@ pub struct WOVolStridingIter<T, S: Unsigned> {
   stride: PhantomData<S>,
 }
 impl<T, S: Unsigned> Clone for WOVolStridingIter<T, S> {
+  #[inline(always)]
   fn clone(&self) -> Self {
     Self {
       vol_address: self.vol_address,
@@ -387,6 +426,7 @@ impl<T, S: Unsigned> Clone for WOVolStridingIter<T, S> {
   }
 }
 impl<T, S: Unsigned> PartialEq for WOVolStridingIter<T, S> {
+  #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address && self.slots_remaining == other.slots_remaining
   }
@@ -395,6 +435,7 @@ impl<T, S: Unsigned> Eq for WOVolStridingIter<T, S> {}
 impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
   type Item = WOVolAddress<T>;
 
+  #[inline]
   fn next(&mut self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       let out = self.vol_address;
@@ -408,14 +449,17 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
     }
   }
 
+  #[inline(always)]
   fn size_hint(&self) -> (usize, Option<usize>) {
     (self.slots_remaining, Some(self.slots_remaining))
   }
 
+  #[inline(always)]
   fn count(self) -> usize {
     self.slots_remaining
   }
 
+  #[inline(always)]
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
       Some(unsafe {
@@ -430,6 +474,7 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
     }
   }
 
+  #[inline]
   fn nth(&mut self, n: usize) -> Option<Self::Item> {
     if self.slots_remaining > n {
       // somewhere in bounds
@@ -447,10 +492,12 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
     }
   }
 
+  #[inline(always)]
   fn max(self) -> Option<Self::Item> {
     self.last()
   }
 
+  #[inline(always)]
   fn min(mut self) -> Option<Self::Item> {
     self.nth(0)
   }
