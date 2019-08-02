@@ -101,6 +101,8 @@
 //! code faster to skip reads and writes we don't need), but with memory mapped
 //! hardware this is the opposite of a good time.
 
+pub use typenum;
+
 use core::{cmp::Ordering, iter::FusedIterator, marker::PhantomData, num::NonZeroUsize};
 use typenum::marker_traits::Unsigned;
 
