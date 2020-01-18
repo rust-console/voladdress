@@ -1,7 +1,6 @@
 //! This is like the top level module, but types here are write only.
 
 use core::{cmp::Ordering, iter::FusedIterator, marker::PhantomData, num::NonZeroUsize};
-use typenum::marker_traits::Unsigned;
 
 /// As `VolAddress`, but write only.
 #[repr(transparent)]
@@ -129,30 +128,29 @@ impl<T> WOVolAddress<T> {
 /// A block of addresses all in a row, write only.
 ///
 /// * The `C` parameter is the element count of the block.
-pub struct WOVolBlock<T, C: Unsigned> {
+pub struct WOVolBlock<T, const COUNT: usize> {
   vol_address: WOVolAddress<T>,
-  slot_count: PhantomData<C>,
 }
-impl<T, C: Unsigned> Clone for WOVolBlock<T, C> {
+impl<T, const COUNT: usize> Clone for WOVolBlock<T, COUNT> {
   #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
-impl<T, C: Unsigned> Copy for WOVolBlock<T, C> {}
-impl<T, C: Unsigned> PartialEq for WOVolBlock<T, C> {
+impl<T, const COUNT: usize> Copy for WOVolBlock<T, COUNT> {}
+impl<T, const COUNT: usize> PartialEq for WOVolBlock<T, COUNT> {
   #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
 }
-impl<T, C: Unsigned> Eq for WOVolBlock<T, C> {}
-impl<T, C: Unsigned> core::fmt::Debug for WOVolBlock<T, C> {
+impl<T, const COUNT: usize> Eq for WOVolBlock<T, COUNT> {}
+impl<T, const COUNT: usize> core::fmt::Debug for WOVolBlock<T, COUNT> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "WOVolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, C::USIZE)
+    write!(f, "WOVolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, COUNT)
   }
 }
-impl<T, C: Unsigned> WOVolBlock<T, C> {
+impl<T, const COUNT: usize> WOVolBlock<T, COUNT> {
   /// Constructs a new `WOVolBlock`.
   ///
   /// # Safety
@@ -163,14 +161,13 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: WOVolAddress::new(address),
-      slot_count: PhantomData,
     }
   }
 
   /// The length of this block (in elements)
   #[inline(always)]
   pub const fn len(self) -> usize {
-    C::USIZE
+    COUNT
   }
 
   /// Gives an iterator over the slots of this block.
@@ -178,7 +175,7 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   pub const fn iter(self) -> WOVolIter<T> {
     WOVolIter {
       vol_address: self.vol_address,
-      slots_remaining: C::USIZE,
+      slots_remaining: COUNT,
     }
   }
 
@@ -196,17 +193,17 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
   /// `WOVolAddress` or a panic.
   #[inline(always)]
   pub fn index(self, slot: usize) -> WOVolAddress<T> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { self.index_unchecked(slot) }
     } else {
-      panic!("Index Requested: {} >= Slot Count: {}", slot, C::USIZE)
+      panic!("Index Requested: {} >= Slot Count: {}", slot, COUNT)
     }
   }
 
   /// Checked "getting" style access of the block, giving an Option value.
   #[inline(always)]
   pub fn get(self, slot: usize) -> Option<WOVolAddress<T>> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { Some(self.index_unchecked(slot)) }
     } else {
       None
@@ -218,37 +215,35 @@ impl<T, C: Unsigned> WOVolBlock<T, C> {
 ///
 /// * The `C` parameter is the element count of the series.
 /// * The `S` parameter is the stride (in bytes) from one element to the next.
-pub struct WOVolSeries<T, C: Unsigned, S: Unsigned> {
+pub struct WOVolSeries<T, const COUNT: usize, const STRIDE: usize> {
   vol_address: WOVolAddress<T>,
-  slot_count: PhantomData<C>,
-  stride: PhantomData<S>,
 }
-impl<T, C: Unsigned, S: Unsigned> Clone for WOVolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> Clone for WOVolSeries<T, COUNT, STRIDE> {
   #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
-impl<T, C: Unsigned, S: Unsigned> Copy for WOVolSeries<T, C, S> {}
-impl<T, C: Unsigned, S: Unsigned> PartialEq for WOVolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> Copy for WOVolSeries<T, COUNT, STRIDE> {}
+impl<T, const COUNT: usize, const STRIDE: usize> PartialEq for WOVolSeries<T, COUNT, STRIDE> {
   #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
 }
-impl<T, C: Unsigned, S: Unsigned> Eq for WOVolSeries<T, C, S> {}
-impl<T, C: Unsigned, S: Unsigned> core::fmt::Debug for WOVolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> Eq for WOVolSeries<T, COUNT, STRIDE> {}
+impl<T, const COUNT: usize, const STRIDE: usize> core::fmt::Debug for WOVolSeries<T, COUNT, STRIDE> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(
       f,
       "WOVolSeries({:p}, count={}, series={})",
       self.vol_address.address.get() as *mut T,
-      C::USIZE,
-      S::USIZE
+      COUNT,
+      STRIDE
     )
   }
 }
-impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> WOVolSeries<T, COUNT, STRIDE> {
   /// Constructs a new `WOVolSeries`.
   ///
   /// # Safety
@@ -259,24 +254,21 @@ impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: WOVolAddress::new(address),
-      slot_count: PhantomData,
-      stride: PhantomData,
     }
   }
 
   /// The length of this series (in elements)
   #[inline(always)]
   pub const fn len(self) -> usize {
-    C::USIZE
+    COUNT
   }
 
   /// Gives an iterator over the slots of this series.
   #[inline(always)]
-  pub const fn iter(self) -> WOVolStridingIter<T, S> {
+  pub const fn iter(self) -> WOVolStridingIter<T, STRIDE> {
     WOVolStridingIter {
       vol_address: self.vol_address,
-      slots_remaining: C::USIZE,
-      stride: PhantomData,
+      slots_remaining: COUNT,
     }
   }
 
@@ -287,24 +279,24 @@ impl<T, C: Unsigned, S: Unsigned> WOVolSeries<T, C, S> {
   /// The slot given must be in bounds.
   #[inline(always)]
   pub const unsafe fn index_unchecked(self, slot: usize) -> WOVolAddress<T> {
-    self.vol_address.cast::<u8>().offset((S::USIZE * slot) as isize).cast::<T>()
+    self.vol_address.cast::<u8>().offset((STRIDE * slot) as isize).cast::<T>()
   }
 
   /// Checked "indexing" style access into the series, giving either a
   /// `WOVolAddress` or a panic.
   #[inline(always)]
   pub fn index(self, slot: usize) -> WOVolAddress<T> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { self.index_unchecked(slot) }
     } else {
-      panic!("Index Requested: {} >= Slot Count: {}", slot, C::USIZE)
+      panic!("Index Requested: {} >= Slot Count: {}", slot, COUNT)
     }
   }
 
   /// Checked "getting" style access into the series, giving an Option value.
   #[inline(always)]
   pub fn get(self, slot: usize) -> Option<WOVolAddress<T>> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { Some(self.index_unchecked(slot)) }
     } else {
       None
@@ -410,29 +402,27 @@ impl<T> core::fmt::Debug for WOVolIter<T> {
 }
 
 /// An iterator that produces strided `WOVolAddress` values.
-pub struct WOVolStridingIter<T, S: Unsigned> {
+pub struct WOVolStridingIter<T, const STRIDE: usize> {
   vol_address: WOVolAddress<T>,
   slots_remaining: usize,
-  stride: PhantomData<S>,
 }
-impl<T, S: Unsigned> Clone for WOVolStridingIter<T, S> {
+impl<T, const STRIDE: usize> Clone for WOVolStridingIter<T, STRIDE> {
   #[inline(always)]
   fn clone(&self) -> Self {
     Self {
       vol_address: self.vol_address,
       slots_remaining: self.slots_remaining,
-      stride: PhantomData,
     }
   }
 }
-impl<T, S: Unsigned> PartialEq for WOVolStridingIter<T, S> {
+impl<T, const STRIDE: usize> PartialEq for WOVolStridingIter<T, STRIDE> {
   #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address && self.slots_remaining == other.slots_remaining
   }
 }
-impl<T, S: Unsigned> Eq for WOVolStridingIter<T, S> {}
-impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
+impl<T, const STRIDE: usize> Eq for WOVolStridingIter<T, STRIDE> {}
+impl<T, const STRIDE: usize> Iterator for WOVolStridingIter<T, STRIDE> {
   type Item = WOVolAddress<T>;
 
   #[inline]
@@ -441,7 +431,7 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
       let out = self.vol_address;
       unsafe {
         self.slots_remaining -= 1;
-        self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE).cast::<T>();
+        self.vol_address = self.vol_address.cast::<u8>().offset(STRIDE as isize).cast::<T>();
       }
       Some(out)
     } else {
@@ -466,7 +456,7 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
         self
           .vol_address
           .cast::<u8>()
-          .offset(S::ISIZE * (self.slots_remaining as isize))
+          .offset((STRIDE * self.slots_remaining) as isize)
           .cast::<T>()
       })
     } else {
@@ -479,10 +469,10 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
     if self.slots_remaining > n {
       // somewhere in bounds
       unsafe {
-        let out = self.vol_address.cast::<u8>().offset(S::ISIZE * (n as isize)).cast::<T>();
+        let out = self.vol_address.cast::<u8>().offset((STRIDE * n) as isize).cast::<T>();
         let jump = n + 1;
         self.slots_remaining -= jump;
-        self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE * (jump as isize)).cast::<T>();
+        self.vol_address = self.vol_address.cast::<u8>().offset((STRIDE * jump) as isize).cast::<T>();
         Some(out)
       }
     } else {
@@ -502,15 +492,15 @@ impl<T, S: Unsigned> Iterator for WOVolStridingIter<T, S> {
     self.nth(0)
   }
 }
-impl<T, S: Unsigned> FusedIterator for WOVolStridingIter<T, S> {}
-impl<T, S: Unsigned> core::fmt::Debug for WOVolStridingIter<T, S> {
+impl<T, const STRIDE: usize> FusedIterator for WOVolStridingIter<T, STRIDE> {}
+impl<T, const STRIDE: usize> core::fmt::Debug for WOVolStridingIter<T, STRIDE> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(
       f,
       "WOVolStridingIter({:p}, remaining={}, stride={})",
       self.vol_address.address.get() as *mut T,
       self.slots_remaining,
-      S::USIZE
+      STRIDE
     )
   }
 }

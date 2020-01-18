@@ -1,7 +1,6 @@
-use typenum::consts::{U16, U256};
 use voladdress::VolSeries;
 
-const DUMMY: VolSeries<i32, U256, U16> = unsafe { VolSeries::new(4) };
+const DUMMY: VolSeries<i32, 256, 16> = unsafe { VolSeries::new(4) };
 
 #[test]
 fn test_iter() {
