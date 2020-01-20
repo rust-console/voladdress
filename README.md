@@ -8,6 +8,8 @@
 
 * Uses the `const_fn` feature to allow the use of marker trait bounds in `const`
   functions.
+* Uses the `const_generics` feature to allow the use of constant integer values
+  in types.
 
 # voladdress
 

@@ -1,6 +1,11 @@
 
 # Changelog
 
+## v0.3.0
+
+* Removed the dependency on the `typenum` crate by adopting the nightly-only
+  `const_generics` feature.
+
 ## v0.2.4
 
 * After seeing results in profiling when using `opt-level=s`, added

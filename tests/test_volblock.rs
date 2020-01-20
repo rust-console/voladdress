@@ -1,7 +1,6 @@
-use typenum::consts::U256;
 use voladdress::VolBlock;
 
-const DUMMY: VolBlock<i32, U256> = unsafe { VolBlock::new(4) };
+const DUMMY: VolBlock<i32, 256> = unsafe { VolBlock::new(4) };
 
 #[test]
 fn test_iter() {

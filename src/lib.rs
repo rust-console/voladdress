@@ -1,6 +1,7 @@
 // Note(Lokathor): Required to allow for marker trait bounds on const functions.
 #![no_std]
-#![feature(const_fn)]
+#![feature(const_fn, const_generics)]
+#![allow(incomplete_features)]
 #![forbid(missing_docs)]
 #![forbid(missing_debug_implementations)]
 #![allow(clippy::len_without_is_empty)]
@@ -26,23 +27,21 @@
 //! something like
 //!
 //! ```rust
-//! use typenum::consts::U256;
 //! use voladdress::{VolBlock, VolAddress};
 //!
 //! pub type Color = u16;
 //!
-//! pub const PALRAM_BG: VolBlock<Color,U256> = unsafe { VolBlock::new(0x500_0000) };
+//! pub const PALRAM_BG: VolBlock<Color, 256> = unsafe { VolBlock::new(0x500_0000) };
 //! ```
 //!
 //! And then in your actual program you might do something like this
 //!
 //! ```rust
-//! # use typenum::consts::U256;
 //! # use voladdress::{VolBlock, VolAddress};
 //! # pub type Color = u16;
 //! fn main() {
 //! #  let palram = vec![0u16; 256];
-//! #  let PALRAM_BG: VolBlock<Color,U256> = unsafe { VolBlock::new(palram.as_ptr() as usize) };
+//! #  let PALRAM_BG: VolBlock<Color, 256> = unsafe { VolBlock::new(palram.as_ptr() as usize) };
 //!   let i = 5;
 //!   // the palette is all 0 (black) at startup.
 //!   assert_eq!(PALRAM_BG.index(i).read(), 0);
@@ -101,10 +100,7 @@
 //! code faster to skip reads and writes we don't need), but with memory mapped
 //! hardware this is the opposite of a good time.
 
-pub use typenum;
-
 use core::{cmp::Ordering, iter::FusedIterator, marker::PhantomData, num::NonZeroUsize};
-use typenum::marker_traits::Unsigned;
 
 pub mod read_only;
 pub mod write_only;
@@ -328,30 +324,29 @@ impl<T> VolAddress<T> {
 ///
 /// This is for if you have something like "a block of 256 `u16` values all in a
 /// row starting at `0x500_0000`".
-pub struct VolBlock<T, C: Unsigned> {
+pub struct VolBlock<T, const COUNT: usize> {
   vol_address: VolAddress<T>,
-  slot_count: PhantomData<C>,
 }
-impl<T, C: Unsigned> Clone for VolBlock<T, C> {
+impl<T, const COUNT: usize> Clone for VolBlock<T, COUNT> {
   #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
-impl<T, C: Unsigned> Copy for VolBlock<T, C> {}
-impl<T, C: Unsigned> PartialEq for VolBlock<T, C> {
+impl<T, const COUNT: usize> Copy for VolBlock<T, COUNT> {}
+impl<T, const COUNT: usize> PartialEq for VolBlock<T, COUNT> {
   #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
 }
-impl<T, C: Unsigned> Eq for VolBlock<T, C> {}
-impl<T, C: Unsigned> core::fmt::Debug for VolBlock<T, C> {
+impl<T, const COUNT: usize> Eq for VolBlock<T, COUNT> {}
+impl<T, const COUNT: usize> core::fmt::Debug for VolBlock<T, COUNT> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, C::USIZE)
+    write!(f, "VolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, COUNT)
   }
 }
-impl<T, C: Unsigned> VolBlock<T, C> {
+impl<T, const COUNT: usize> VolBlock<T, COUNT> {
   /// Constructs a new `VolBlock`.
   ///
   /// # Safety
@@ -362,14 +357,13 @@ impl<T, C: Unsigned> VolBlock<T, C> {
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: VolAddress::new(address),
-      slot_count: PhantomData,
     }
   }
 
   /// The length of this block (in elements)
   #[inline(always)]
   pub const fn len(self) -> usize {
-    C::USIZE
+    COUNT
   }
 
   /// Gives an iterator over the slots of this block.
@@ -377,7 +371,7 @@ impl<T, C: Unsigned> VolBlock<T, C> {
   pub const fn iter(self) -> VolIter<T> {
     VolIter {
       vol_address: self.vol_address,
-      slots_remaining: C::USIZE,
+      slots_remaining: COUNT,
     }
   }
 
@@ -395,17 +389,17 @@ impl<T, C: Unsigned> VolBlock<T, C> {
   /// or a panic.
   #[inline(always)]
   pub fn index(self, slot: usize) -> VolAddress<T> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { self.index_unchecked(slot) }
     } else {
-      panic!("Index Requested: {} >= Slot Count: {}", slot, C::USIZE)
+      panic!("Index Requested: {} >= Slot Count: {}", slot, COUNT)
     }
   }
 
   /// Checked "getting" style access of the block, giving an Option value.
   #[inline(always)]
   pub fn get(self, slot: usize) -> Option<VolAddress<T>> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { Some(self.index_unchecked(slot)) }
     } else {
       None
@@ -420,65 +414,60 @@ impl<T, C: Unsigned> VolBlock<T, C> {
 ///
 /// This is for when you have something like "a series of 128 `u16` values every
 /// 16 bytes starting at `0x700_0000`".
-pub struct VolSeries<T, C: Unsigned, S: Unsigned> {
+pub struct VolSeries<T, const COUNT: usize, const STRIDE: usize> {
   vol_address: VolAddress<T>,
-  slot_count: PhantomData<C>,
-  stride: PhantomData<S>,
 }
-impl<T, C: Unsigned, S: Unsigned> Clone for VolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> Clone for VolSeries<T, COUNT, STRIDE> {
   #[inline(always)]
   fn clone(&self) -> Self {
     *self
   }
 }
-impl<T, C: Unsigned, S: Unsigned> Copy for VolSeries<T, C, S> {}
-impl<T, C: Unsigned, S: Unsigned> PartialEq for VolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> Copy for VolSeries<T, COUNT, STRIDE> {}
+impl<T, const COUNT: usize, const STRIDE: usize> PartialEq for VolSeries<T, COUNT, STRIDE> {
   #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address
   }
 }
-impl<T, C: Unsigned, S: Unsigned> Eq for VolSeries<T, C, S> {}
-impl<T, C: Unsigned, S: Unsigned> core::fmt::Debug for VolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> Eq for VolSeries<T, COUNT, STRIDE> {}
+impl<T, const COUNT: usize, const STRIDE: usize> core::fmt::Debug for VolSeries<T, COUNT, STRIDE> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(
       f,
       "VolSeries({:p}, count={}, series={})",
       self.vol_address.address.get() as *mut T,
-      C::USIZE,
-      S::USIZE
+      COUNT,
+      STRIDE
     )
   }
 }
-impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
+impl<T, const COUNT: usize, const STRIDE: usize> VolSeries<T, COUNT, STRIDE> {
   /// Constructs a new `VolSeries`.
   ///
   /// # Safety
   ///
   /// The given address must be a valid `VolAddress` at each position in the
-  /// series for however many slots (`C`), strided by the selected amount (`S`).
+  /// series for COUNT slots with stride STRIDE.
   #[inline(always)]
   pub const unsafe fn new(address: usize) -> Self {
     Self {
       vol_address: VolAddress::new(address),
-      slot_count: PhantomData,
-      stride: PhantomData,
     }
   }
 
   /// The length of this series (in elements)
   #[inline(always)]
   pub const fn len(self) -> usize {
-    C::USIZE
+    COUNT
   }
 
   /// Gives an iterator over the slots of this series.
   #[inline(always)]
-  pub const fn iter(self) -> VolStridingIter<T, S> {
+  pub const fn iter(self) -> VolStridingIter<T, STRIDE> {
     VolStridingIter {
       vol_address: self.vol_address,
-      slots_remaining: C::USIZE,
-      stride: PhantomData,
+      slots_remaining: COUNT,
     }
   }
 
@@ -489,23 +478,23 @@ impl<T, C: Unsigned, S: Unsigned> VolSeries<T, C, S> {
   /// The slot given must be in bounds.
   #[inline(always)]
   pub const unsafe fn index_unchecked(self, slot: usize) -> VolAddress<T> {
-    self.vol_address.cast::<u8>().offset((S::USIZE * slot) as isize).cast::<T>()
+    self.vol_address.cast::<u8>().offset((STRIDE * slot) as isize).cast::<T>()
   }
 
   /// Checked "indexing" style access into the series, giving either a `VolAddress` or a panic.
   #[inline(always)]
   pub fn index(self, slot: usize) -> VolAddress<T> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { self.index_unchecked(slot) }
     } else {
-      panic!("Index Requested: {} >= Slot Count: {}", slot, C::USIZE)
+      panic!("Index Requested: {} >= Slot Count: {}", slot, COUNT)
     }
   }
 
   /// Checked "getting" style access into the series, giving an Option value.
   #[inline(always)]
   pub fn get(self, slot: usize) -> Option<VolAddress<T>> {
-    if slot < C::USIZE {
+    if slot < COUNT {
       unsafe { Some(self.index_unchecked(slot)) }
     } else {
       None
@@ -611,29 +600,27 @@ impl<T> core::fmt::Debug for VolIter<T> {
 }
 
 /// An iterator that produces strided `VolAddress` values.
-pub struct VolStridingIter<T, S: Unsigned> {
+pub struct VolStridingIter<T, const STRIDE: usize> {
   vol_address: VolAddress<T>,
   slots_remaining: usize,
-  stride: PhantomData<S>,
 }
-impl<T, S: Unsigned> Clone for VolStridingIter<T, S> {
+impl<T, const STRIDE: usize> Clone for VolStridingIter<T, STRIDE> {
   #[inline(always)]
   fn clone(&self) -> Self {
     Self {
       vol_address: self.vol_address,
       slots_remaining: self.slots_remaining,
-      stride: PhantomData,
     }
   }
 }
-impl<T, S: Unsigned> PartialEq for VolStridingIter<T, S> {
+impl<T, const STRIDE: usize> PartialEq for VolStridingIter<T, STRIDE> {
   #[inline(always)]
   fn eq(&self, other: &Self) -> bool {
     self.vol_address == other.vol_address && self.slots_remaining == other.slots_remaining
   }
 }
-impl<T, S: Unsigned> Eq for VolStridingIter<T, S> {}
-impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
+impl<T, const STRIDE: usize> Eq for VolStridingIter<T, STRIDE> {}
+impl<T, const STRIDE: usize> Iterator for VolStridingIter<T, STRIDE> {
   type Item = VolAddress<T>;
 
   #[inline]
@@ -642,7 +629,7 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
       let out = self.vol_address;
       unsafe {
         self.slots_remaining -= 1;
-        self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE).cast::<T>();
+        self.vol_address = self.vol_address.cast::<u8>().offset(STRIDE as isize).cast::<T>();
       }
       Some(out)
     } else {
@@ -667,7 +654,7 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
         self
           .vol_address
           .cast::<u8>()
-          .offset(S::ISIZE * (self.slots_remaining as isize))
+          .offset((STRIDE * self.slots_remaining) as isize)
           .cast::<T>()
       })
     } else {
@@ -680,10 +667,10 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
     if self.slots_remaining > n {
       // somewhere in bounds
       unsafe {
-        let out = self.vol_address.cast::<u8>().offset(S::ISIZE * (n as isize)).cast::<T>();
+        let out = self.vol_address.cast::<u8>().offset((STRIDE * n) as isize).cast::<T>();
         let jump = n + 1;
         self.slots_remaining -= jump;
-        self.vol_address = self.vol_address.cast::<u8>().offset(S::ISIZE * (jump as isize)).cast::<T>();
+        self.vol_address = self.vol_address.cast::<u8>().offset((STRIDE * jump) as isize).cast::<T>();
         Some(out)
       }
     } else {
@@ -703,15 +690,15 @@ impl<T, S: Unsigned> Iterator for VolStridingIter<T, S> {
     self.nth(0)
   }
 }
-impl<T, S: Unsigned> FusedIterator for VolStridingIter<T, S> {}
-impl<T, S: Unsigned> core::fmt::Debug for VolStridingIter<T, S> {
+impl<T, const STRIDE: usize> FusedIterator for VolStridingIter<T, STRIDE> {}
+impl<T, const STRIDE: usize> core::fmt::Debug for VolStridingIter<T, STRIDE> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(
       f,
       "VolStridingIter({:p}, remaining={}, stride={})",
       self.vol_address.address.get() as *mut T,
       self.slots_remaining,
-      S::USIZE
+      STRIDE
     )
   }
 }
