@@ -6,9 +6,10 @@
 * Removed the dependency on the `typenum` crate by adopting the nightly-only
   `const_generics` feature.
 * Added the `Zlib` license as an option. It has the same freedom to compile the
-  crate into your program without needing to credit this crate. The difference
-  is that `Zlib` is a license that's approved for people to use in Google
-  projects, while `0BSD` is unfortunately not.
+  crate into your program without needing to credit this crate (though source
+  redistribution requires that you attach the license). The main difference is
+  that `Zlib` is a license that's approved for people to use in Google projects,
+  while `0BSD` is unfortunately not.
 
 ## v0.2.4
 
