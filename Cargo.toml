@@ -6,6 +6,7 @@ authors = ["Lokathor <zefria@gmail.com>", "Thomas Winwood <twwinwood@gmail.com>"
 repository = "https://github.com/rust-console/voladdress"
 readme = "README.md"
 keywords = ["volatile", "address", "no_std"]
+categories = ["embedded", "hardware-support", "no-std"]
 edition = "2018"
 license = "0BSD OR Zlib"
 
