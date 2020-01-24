@@ -410,8 +410,8 @@ impl<T, const COUNT: usize> VolBlock<T, COUNT> {
 
 /// A series of evenly strided addresses.
 ///
-/// * The `C` parameter is the element count of the series.
-/// * The `S` parameter is the stride (in bytes) from one element to the next.
+/// * The `COUNT` parameter is the element count of the series.
+/// * The `STRIDE` parameter is the stride (in bytes) from one element to the next.
 ///
 /// This is for when you have something like "a series of 128 `u16` values every
 /// 16 bytes starting at `0x700_0000`".

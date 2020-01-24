@@ -213,8 +213,8 @@ impl<T, const COUNT: usize> WOVolBlock<T, COUNT> {
 
 /// A series of evenly strided addresses, write only.
 ///
-/// * The `C` parameter is the element count of the series.
-/// * The `S` parameter is the stride (in bytes) from one element to the next.
+/// * The `COUNT` parameter is the element count of the series.
+/// * The `STRIDE` parameter is the stride (in bytes) from one element to the next.
 pub struct WOVolSeries<T, const COUNT: usize, const STRIDE: usize> {
   vol_address: WOVolAddress<T>,
 }

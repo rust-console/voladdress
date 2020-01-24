@@ -225,8 +225,8 @@ impl<T, const COUNT: usize> ROVolBlock<T, COUNT> {
 
 /// A series of evenly strided addresses, read only.
 ///
-/// * The `C` parameter is the element count of the series.
-/// * The `S` parameter is the stride (in bytes) from one element to the next.
+/// * The `COUNT` parameter is the element count of the series.
+/// * The `STRIDE` parameter is the stride (in bytes) from one element to the next.
 pub struct ROVolSeries<T, const COUNT: usize, const STRIDE: usize> {
   vol_address: ROVolAddress<T>,
 }
