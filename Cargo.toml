@@ -7,6 +7,6 @@ repository = "https://github.com/rust-console/voladdress"
 readme = "README.md"
 keywords = ["volatile", "address", "no_std"]
 edition = "2018"
-license = "Zlib"
+license = "0BSD OR Zlib"
 
 [dependencies]
