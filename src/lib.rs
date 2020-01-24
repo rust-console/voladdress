@@ -5,6 +5,7 @@
 #![forbid(missing_docs)]
 #![forbid(missing_debug_implementations)]
 #![allow(clippy::len_without_is_empty)]
+#![allow(clippy::needless_doctest_main)]
 
 //! `voladdress` is a crate that makes it easy to work with volatile memory
 //! addresses (eg: memory mapped hardware).
