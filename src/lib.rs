@@ -434,7 +434,7 @@ impl<T> PartialEq for DynamicVolBlock<T> {
 impl<T> Eq for DynamicVolBlock<T> {}
 impl<T> core::fmt::Debug for DynamicVolBlock<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, self.count)
+    write!(f, "DynamicVolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, self.count)
   }
 }
 impl<T> DynamicVolBlock<T> {
