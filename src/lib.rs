@@ -408,6 +408,97 @@ impl<T, const COUNT: usize> VolBlock<T, COUNT> {
   }
 }
 
+/// A block of addresses all in a row that's dynamically sized.
+///
+/// * The `C` parameter is the element count of the block.
+///
+/// This is for if you have something like "a block of 256 `u16` values all in a
+/// row starting at `0x500_0000`" but the size of the block depends on hardware values.
+pub struct DynamicVolBlock<T> {
+  vol_address: VolAddress<T>,
+  count: usize,
+}
+impl<T> Clone for DynamicVolBlock<T> {
+  #[inline(always)]
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+impl<T> Copy for DynamicVolBlock<T> {}
+impl<T> PartialEq for DynamicVolBlock<T> {
+  #[inline(always)]
+  fn eq(&self, other: &Self) -> bool {
+    self.vol_address == other.vol_address && self.count == other.count
+  }
+}
+impl<T> Eq for DynamicVolBlock<T> {}
+impl<T> core::fmt::Debug for DynamicVolBlock<T> {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "VolBlock({:p}, count={})", self.vol_address.address.get() as *mut T, self.count)
+  }
+}
+impl<T> DynamicVolBlock<T> {
+  /// Constructs a new `VolBlock`.
+  ///
+  /// # Safety
+  ///
+  /// The given address must be a valid `VolAddress` at each position in the
+  /// block for however many slots (`C`).
+  #[inline(always)]
+  pub const unsafe fn new(address: usize, count: usize) -> Self {
+    Self {
+      vol_address: VolAddress::new(address),
+      count,
+    }
+  }
+
+  /// The length of this block (in elements)
+  #[inline(always)]
+  pub fn len(self) -> usize {
+    self.count
+  }
+
+  /// Gives an iterator over the slots of this block.
+  #[inline(always)]
+  pub fn iter(self) -> VolIter<T> {
+    VolIter {
+      vol_address: self.vol_address,
+      slots_remaining: self.count,
+    }
+  }
+
+  /// Unchecked indexing into the block.
+  ///
+  /// # Safety
+  ///
+  /// The slot given must be in bounds.
+  #[inline(always)]
+  pub const unsafe fn index_unchecked(self, slot: usize) -> VolAddress<T> {
+    self.vol_address.offset(slot as isize)
+  }
+
+  /// Checked "indexing" style access of the block, giving either a `VolAddress`
+  /// or a panic.
+  #[inline(always)]
+  pub fn index(self, slot: usize) -> VolAddress<T> {
+    if slot < self.count {
+      unsafe { self.index_unchecked(slot) }
+    } else {
+      panic!("Index Requested: {} >= Slot Count: {}", slot, self.count)
+    }
+  }
+
+  /// Checked "getting" style access of the block, giving an Option value.
+  #[inline(always)]
+  pub fn get(self, slot: usize) -> Option<VolAddress<T>> {
+    if slot < self.count {
+      unsafe { Some(self.index_unchecked(slot)) }
+    } else {
+      None
+    }
+  }
+}
+
 /// A series of evenly strided addresses.
 ///
 /// * The `COUNT` parameter is the element count of the series.
@@ -651,13 +742,7 @@ impl<T, const STRIDE: usize> Iterator for VolStridingIter<T, STRIDE> {
   #[inline(always)]
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
-      Some(unsafe {
-        self
-          .vol_address
-          .cast::<u8>()
-          .offset((STRIDE * self.slots_remaining) as isize)
-          .cast::<T>()
-      })
+      Some(unsafe { self.vol_address.cast::<u8>().offset((STRIDE * self.slots_remaining) as isize).cast::<T>() })
     } else {
       None
     }
