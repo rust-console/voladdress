@@ -464,13 +464,7 @@ impl<T, const STRIDE: usize> Iterator for ROVolStridingIter<T, STRIDE> {
   #[inline(always)]
   fn last(self) -> Option<Self::Item> {
     if self.slots_remaining > 0 {
-      Some(unsafe {
-        self
-          .vol_address
-          .cast::<u8>()
-          .offset((STRIDE * self.slots_remaining) as isize)
-          .cast::<T>()
-      })
+      Some(unsafe { self.vol_address.cast::<u8>().offset((STRIDE * self.slots_remaining) as isize).cast::<T>() })
     } else {
       None
     }
