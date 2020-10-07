@@ -317,6 +317,17 @@ impl<T> VolAddress<T> {
   pub fn write(self, val: T) {
     unsafe { (self.address.get() as *mut T).write_volatile(val) }
   }
+
+  /// Volatile reads a value out of the address, passes it through the given
+  /// function, then volatile writes it back to the address.
+  #[inline(always)]
+  pub fn update<F>(self, func: F)
+  where
+    F: Fn(T) -> T,
+    T: Copy,
+  {
+    self.write(func(self.read()))
+  }
 }
 
 /// A block of addresses all in a row.
