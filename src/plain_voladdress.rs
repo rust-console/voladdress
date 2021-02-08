@@ -37,7 +37,6 @@ use super::*;
 /// * Safety Invariant: The address of a `VolAddress` must be an aligned and
 ///   legal address for a `T` type value within the device's memory space,
 ///   otherwise the `read` and `write` methods will trigger UB when called.
-#[derive(Hash)]
 #[repr(transparent)]
 pub struct VolAddress<T, R, W> {
   pub(crate) address: NonZeroUsize,
@@ -93,6 +92,8 @@ impl<T, R, W> VolAddress<T, R, W> {
   ///
   /// ## Safety
   /// * As per the type docs
+  #[inline]
+  #[must_use]
   pub const unsafe fn add(self, count: usize) -> Self {
     self.offset(count as isize)
   }
@@ -106,6 +107,8 @@ impl<T, R, W> VolAddress<T, R, W> {
   ///
   /// ## Safety
   /// * As per the type docs
+  #[inline]
+  #[must_use]
   pub const unsafe fn sub(self, count: usize) -> Self {
     self.offset((count as isize).wrapping_neg())
   }
@@ -117,6 +120,8 @@ impl<T, R, W> VolAddress<T, R, W> {
   ///
   /// ## Safety
   /// * As per the type docs
+  #[inline]
+  #[must_use]
   pub const unsafe fn offset(self, count: isize) -> Self {
     let total_delta = core::mem::size_of::<T>().wrapping_mul(count as usize);
     VolAddress {
@@ -135,6 +140,7 @@ where
 {
   /// Volatile reads the current value of `A`.
   #[inline]
+  #[must_use]
   pub fn read(self) -> T {
     unsafe { read_volatile(self.address.get() as *const T) }
   }
@@ -149,6 +155,7 @@ where
   /// * The safety rules of reading this address depend on the device. Consult
   ///   your hardware manual.
   #[inline]
+  #[must_use]
   pub unsafe fn read(self) -> T {
     read_volatile(self.address.get() as *const T)
   }
@@ -188,6 +195,8 @@ impl<T, R, W> Clone for VolAddress<T, R, W> {
 impl<T, R, W> Copy for VolAddress<T, R, W> {}
 
 impl<T, R, W> core::cmp::PartialEq for VolAddress<T, R, W> {
+  #[inline]
+  #[must_use]
   fn eq(&self, other: &Self) -> bool {
     core::cmp::PartialEq::eq(&self.address.get(), &other.address.get())
   }
@@ -195,6 +204,8 @@ impl<T, R, W> core::cmp::PartialEq for VolAddress<T, R, W> {
 impl<T, R, W> core::cmp::Eq for VolAddress<T, R, W> {}
 
 impl<T, R, W> core::cmp::PartialOrd for VolAddress<T, R, W> {
+  #[inline]
+  #[must_use]
   fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
     core::cmp::PartialOrd::partial_cmp(
       &self.address.get(),
@@ -203,6 +214,8 @@ impl<T, R, W> core::cmp::PartialOrd for VolAddress<T, R, W> {
   }
 }
 impl<T, R, W> core::cmp::Ord for VolAddress<T, R, W> {
+  #[inline]
+  #[must_use]
   fn cmp(&self, other: &Self) -> core::cmp::Ordering {
     core::cmp::Ord::cmp(&self.address.get(), &other.address.get())
   }

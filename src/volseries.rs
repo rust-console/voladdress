@@ -17,7 +17,6 @@ use super::*;
 /// * The address space must legally contain `C` values of the `T` type, spaced
 ///   every `S` bytes, starting from the base address.
 /// * The memory series must not wrap around the end of the address space.
-#[derive(Hash)]
 #[repr(transparent)]
 pub struct VolSeries<T, R, W, const C: usize, const S: usize> {
   base: VolAddress<T, R, W>,
@@ -97,6 +96,8 @@ impl<T, R, W, const C: usize, const S: usize> Copy
 impl<T, R, W, const C: usize, const S: usize> core::cmp::PartialEq
   for VolSeries<T, R, W, C, S>
 {
+  #[inline]
+  #[must_use]
   fn eq(&self, other: &Self) -> bool {
     core::cmp::PartialEq::eq(&self.base, &other.base)
   }
