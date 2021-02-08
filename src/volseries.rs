@@ -48,6 +48,7 @@ impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
   /// * If the index is out of bounds this will panic.
   #[inline]
   #[must_use]
+  #[track_caller]
   pub const fn index(self, i: usize) -> VolAddress<T, R, W> {
     if i < C {
       unsafe { self.base.cast::<[u8; S]>().add(i).cast::<T>() }

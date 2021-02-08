@@ -20,9 +20,6 @@ use super::*;
 #[repr(transparent)]
 pub struct VolBlock<T, R, W, const C: usize> {
   base: VolAddress<T, R, W>,
-  target: PhantomData<T>,
-  read_status: PhantomData<R>,
-  write_status: PhantomData<W>,
 }
 
 impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
@@ -33,12 +30,7 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   #[inline]
   #[must_use]
   pub const unsafe fn new(base: usize) -> Self {
-    Self {
-      base: VolAddress::new(base),
-      target: PhantomData,
-      read_status: PhantomData,
-      write_status: PhantomData,
-    }
+    Self { base: VolAddress::new(base) }
   }
 
   /// Indexes to the `i`th position of the memory block.
@@ -47,6 +39,7 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   /// * If the index is out of bounds this will panic.
   #[inline]
   #[must_use]
+  #[track_caller]
   pub const fn index(self, i: usize) -> VolAddress<T, R, W> {
     if i < C {
       unsafe { self.base.add(i) }
