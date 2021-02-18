@@ -134,7 +134,7 @@ impl<T, R, W> VolAddress<T, R, W> {
     }
   }
 }
-impl<T, W> VolAddress<T, Yes, W>
+impl<T, W> VolAddress<T, Safe, W>
 where
   T: Copy,
 {
@@ -160,7 +160,7 @@ where
     read_volatile(self.address.get() as *const T)
   }
 }
-impl<T, R> VolAddress<T, R, Yes>
+impl<T, R> VolAddress<T, R, Safe>
 where
   T: Copy,
 {

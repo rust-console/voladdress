@@ -37,8 +37,8 @@ pub use volseries::*;
 /// Lets you put "No" into a generic type parameter.
 pub struct No;
 
-/// Lets you put "Yes" into a generic type parameter.
-pub struct Yes;
+/// Lets you put "Safe" into a generic type parameter.
+pub struct Safe;
 
 /// Lets you put "Unsafe" into a generic type parameter.
 pub struct Unsafe;
