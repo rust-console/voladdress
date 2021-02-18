@@ -14,6 +14,30 @@
 //! If your data is a number of identical values in a row consider using
 //! [`VolBlock`] or [`VolSeries`]. If your data is irregular you may need to use
 //! a grab-bag of [`VolAddress`] entries or something like that.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use voladdress::*;
+//!
+//! // some examples for the GBA
+//!
+//! // general read/write; safe, just has to be volatile
+//! pub const MOSAIC: VolAddress<u16, Safe, Safe> =
+//!   unsafe { VolAddress::new(0x0400_004C) };
+//!
+//! // a read-only location
+//! pub const VCOUNT: VolAddress<u8, Safe, ()> =
+//!   unsafe { VolAddress::new(0x0400_0006) };
+//!
+//! // a block of 256 entries
+//! pub const BG_PALRAM: VolBlock<u16, Safe, Safe, 256> =
+//!   unsafe { VolBlock::new(0x0500_0000) };
+//!
+//! // address for a DMA transfer, unsafe to write, but safe to read
+//! pub const DMA0_SRC: VolAddress<usize, Unsafe, Safe> =
+//!   unsafe { VolAddress::new(0x0400_00B0) };
+//! ```
 
 use core::{
   marker::PhantomData,
@@ -29,9 +53,6 @@ pub use volblock::*;
 
 mod volseries;
 pub use volseries::*;
-
-/// Lets you put "No" into a generic type parameter.
-pub struct No;
 
 /// Lets you put "Safe" into a generic type parameter.
 pub struct Safe;

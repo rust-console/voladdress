@@ -11,11 +11,11 @@ use super::*;
 ///   * The target type type must impl `Copy` for reading and writing to be
 ///     allowed.
 /// * `R`: If the address is readable.
-///   * If `R=Yes` then you can safely read from the address.
+///   * If `R=Safe` then you can safely read from the address.
 ///   * If `R=Unsafe` then you can unsafely read from the address.
 ///   * Otherwise you cannot read from the address.
 /// * `W`: If the address is writable.
-///   * If `W=Yes` then you can safely write to the address.
+///   * If `W=Safe` then you can safely write to the address.
 ///   * If `W=Unsafe` then you can unsafely write to the address.
 ///   * Otherwise you cannot write to the address.
 ///
@@ -26,8 +26,7 @@ use super::*;
 /// * If there's a series of strided `T` values you want to model, consider
 ///   using [`VolSeries`] instead.
 /// * If the `T` type is larger than a single machine register it's probably
-///   **not** a good fit for the `VolAddress` abstraction. See the notes at the
-///   crate root for an alternative.
+///   **not** a good fit for the `VolAddress` abstraction.
 ///
 /// ## Safety
 /// This type's safety follows the "unsafe creation, then safe use" strategy.
@@ -35,8 +34,9 @@ use super::*;
 /// * Validity Invariant: The address of a `VolAddress` must always be non-zero,
 ///   or you will instantly trigger UB.
 /// * Safety Invariant: The address of a `VolAddress` must be an aligned and
-///   legal address for a `T` type value within the device's memory space,
-///   otherwise the `read` and `write` methods will trigger UB when called.
+///   legal address for a `T` type value (with correct `R` and `W` permissions)
+///   within the device's memory space, otherwise the `read` and `write` methods
+///   will trigger UB when called.
 #[repr(transparent)]
 pub struct VolAddress<T, R, W> {
   pub(crate) address: NonZeroUsize,
