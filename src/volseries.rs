@@ -21,9 +21,6 @@ use super::*;
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolSeries<T, R, W, const C: usize, const S: usize> {
   base: VolAddress<T, R, W>,
-  target: PhantomData<T>,
-  read_status: PhantomData<R>,
-  write_status: PhantomData<W>,
 }
 
 impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
@@ -34,12 +31,7 @@ impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
   #[inline]
   #[must_use]
   pub const unsafe fn new(base: usize) -> Self {
-    Self {
-      base: VolAddress::new(base),
-      target: PhantomData,
-      read_status: PhantomData,
-      write_status: PhantomData,
-    }
+    Self { base: VolAddress::new(base) }
   }
 
   /// Indexes to the `i`th position of the memory series.
