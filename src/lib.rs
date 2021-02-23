@@ -55,7 +55,9 @@ mod volseries;
 pub use volseries::*;
 
 /// Lets you put "Safe" into a generic type parameter.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Safe;
 
 /// Lets you put "Unsafe" into a generic type parameter.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Unsafe;

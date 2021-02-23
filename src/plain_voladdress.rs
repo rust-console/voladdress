@@ -38,6 +38,7 @@ use super::*;
 ///   within the device's memory space, otherwise the `read` and `write` methods
 ///   will trigger UB when called.
 #[repr(transparent)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolAddress<T, R, W> {
   pub(crate) address: NonZeroUsize,
   target: PhantomData<T>,
@@ -193,33 +194,6 @@ impl<T, R, W> Clone for VolAddress<T, R, W> {
   }
 }
 impl<T, R, W> Copy for VolAddress<T, R, W> {}
-
-impl<T, R, W> core::cmp::PartialEq for VolAddress<T, R, W> {
-  #[inline]
-  #[must_use]
-  fn eq(&self, other: &Self) -> bool {
-    core::cmp::PartialEq::eq(&self.address.get(), &other.address.get())
-  }
-}
-impl<T, R, W> core::cmp::Eq for VolAddress<T, R, W> {}
-
-impl<T, R, W> core::cmp::PartialOrd for VolAddress<T, R, W> {
-  #[inline]
-  #[must_use]
-  fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-    core::cmp::PartialOrd::partial_cmp(
-      &self.address.get(),
-      &other.address.get(),
-    )
-  }
-}
-impl<T, R, W> core::cmp::Ord for VolAddress<T, R, W> {
-  #[inline]
-  #[must_use]
-  fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-    core::cmp::Ord::cmp(&self.address.get(), &other.address.get())
-  }
-}
 
 impl<T, R, W> core::fmt::Debug for VolAddress<T, R, W> {
   #[cold]

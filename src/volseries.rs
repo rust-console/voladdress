@@ -18,6 +18,7 @@ use super::*;
 ///   every `S` bytes, starting from the base address.
 /// * The memory series must not wrap around the end of the address space.
 #[repr(transparent)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolSeries<T, R, W, const C: usize, const S: usize> {
   base: VolAddress<T, R, W>,
   target: PhantomData<T>,
@@ -89,20 +90,6 @@ impl<T, R, W, const C: usize, const S: usize> Clone
   }
 }
 impl<T, R, W, const C: usize, const S: usize> Copy
-  for VolSeries<T, R, W, C, S>
-{
-}
-
-impl<T, R, W, const C: usize, const S: usize> core::cmp::PartialEq
-  for VolSeries<T, R, W, C, S>
-{
-  #[inline]
-  #[must_use]
-  fn eq(&self, other: &Self) -> bool {
-    core::cmp::PartialEq::eq(&self.base, &other.base)
-  }
-}
-impl<T, R, W, const C: usize, const S: usize> core::cmp::Eq
   for VolSeries<T, R, W, C, S>
 {
 }

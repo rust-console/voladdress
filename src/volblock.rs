@@ -17,6 +17,7 @@ use super::*;
 ///   type, starting from the base address.
 /// * The memory block must not wrap around past the end of the address space.
 #[repr(transparent)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolBlock<T, R, W, const C: usize> {
   base: VolAddress<T, R, W>,
 }
@@ -78,15 +79,6 @@ impl<T, R, W, const C: usize> Clone for VolBlock<T, R, W, C> {
   }
 }
 impl<T, R, W, const C: usize> Copy for VolBlock<T, R, W, C> {}
-
-impl<T, R, W, const C: usize> core::cmp::PartialEq for VolBlock<T, R, W, C> {
-  #[inline]
-  #[must_use]
-  fn eq(&self, other: &Self) -> bool {
-    core::cmp::PartialEq::eq(&self.base, &other.base)
-  }
-}
-impl<T, R, W, const C: usize> core::cmp::Eq for VolBlock<T, R, W, C> {}
 
 impl<T, R, W, const C: usize> core::fmt::Debug for VolBlock<T, R, W, C> {
   #[cold]
