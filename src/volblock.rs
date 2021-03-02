@@ -33,6 +33,13 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
     Self { base: VolAddress::new(base) }
   }
 
+  /// The length of this block (in elements).
+  #[inline]
+  #[must_use]
+  pub const unsafe fn len(self) -> usize {
+    C
+  }
+
   /// Indexes to the `i`th position of the memory block.
   ///
   /// ## Panics

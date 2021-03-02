@@ -34,6 +34,20 @@ impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
     Self { base: VolAddress::new(base) }
   }
 
+  /// The length of this series (in elements).
+  #[inline]
+  #[must_use]
+  pub const unsafe fn len(self) -> usize {
+    C
+  }
+
+  /// The stride of this series (in bytes).
+  #[inline]
+  #[must_use]
+  pub const unsafe fn stride(self) -> usize {
+    S
+  }
+
   /// Indexes to the `i`th position of the memory series.
   ///
   /// ## Panics
