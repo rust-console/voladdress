@@ -1,7 +1,7 @@
 [package]
 name = "voladdress"
 description = "A crate for easy volatile memory abstraction."
-version = "0.4.0"
+version = "0.4.1-alpha.0"
 authors = ["Lokathor <zefria@gmail.com>", "Thomas Winwood <twwinwood@gmail.com>"]
 edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
