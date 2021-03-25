@@ -1,5 +1,6 @@
 [package]
 name = "voladdress"
+description = "A crate for easy volatile memory abstraction."
 version = "0.4.0"
 authors = ["Lokathor <zefria@gmail.com>", "Thomas Winwood <twwinwood@gmail.com>"]
 edition = "2018"
