@@ -36,7 +36,7 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   /// The length of this block (in elements).
   #[inline]
   #[must_use]
-  pub const unsafe fn len(self) -> usize {
+  pub const fn len(self) -> usize {
     C
   }
 
