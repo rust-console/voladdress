@@ -145,6 +145,7 @@ impl<T, R, W> VolAddress<T, R, W> {
     }
   }
 }
+
 impl<T, W> VolAddress<T, Safe, W>
 where
   T: Copy,
@@ -153,6 +154,8 @@ where
   #[inline]
   #[must_use]
   pub fn read(self) -> T {
+    // Safety: The declarer of the value gave this a `Safe` read typing, thus
+    // they've asserted that this is a safe to read address.
     unsafe { read_volatile(self.address.get() as *const T) }
   }
 }
@@ -171,6 +174,7 @@ where
     read_volatile(self.address.get() as *const T)
   }
 }
+
 impl<T, R> VolAddress<T, R, Safe>
 where
   T: Copy,
@@ -178,6 +182,8 @@ where
   /// Volatile writes a new value to `A`.
   #[inline]
   pub fn write(self, t: T) {
+    // Safety: The declarer of the value gave this a `Safe` write typing, thus
+    // they've asserted that this is a safe to write address.
     unsafe { write_volatile(self.address.get() as *mut T, t) }
   }
 }
