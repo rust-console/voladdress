@@ -202,6 +202,67 @@ where
   }
 }
 
+impl<T> VolAddress<T, Safe, Safe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  #[inline]
+  pub fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+impl<T> VolAddress<T, Unsafe, Safe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading this address depend on the device. Consult
+  ///   your hardware manual.
+  #[inline]
+  pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+impl<T> VolAddress<T, Safe, Unsafe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading this address depend on the device. Consult
+  ///   your hardware manual.
+  #[inline]
+  pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+impl<T> VolAddress<T, Unsafe, Unsafe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading this address depend on the device. Consult
+  ///   your hardware manual.
+  #[inline]
+  pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+
 impl<T, R, W> Clone for VolAddress<T, R, W> {
   #[inline]
   #[must_use]
