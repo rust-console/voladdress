@@ -8,6 +8,14 @@ use super::*;
 /// This type stores a memory address and provides ergonomic volatile access to
 /// said memory address.
 ///
+/// Note that this type has several methods for accessing the data at the
+/// address specified, and a particular instance of this type can use them
+/// unsafely, use them safely, or not use them at all based on the generic
+/// values of `R` and `W` (explained below).
+/// * `read`
+/// * `write`
+/// * `apply` (reads, runs a function, then writes)
+///
 /// ## Generic Parameters
 ///
 /// * `T`: The type of the value stored at the address.
