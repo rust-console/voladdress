@@ -202,7 +202,7 @@ where
   /// Volatile writes a new value to `A`.
   ///
   /// ## Safety
-  /// * The safety rules of reading this address depend on the device. Consult
+  /// * The safety rules of writing this address depend on the device. Consult
   ///   your hardware manual.
   #[inline]
   pub unsafe fn write(self, t: T) {
@@ -229,8 +229,8 @@ where
   /// Reads the address, applies the operation, and writes back the new value.
   ///
   /// ## Safety
-  /// * The safety rules of reading this address depend on the device. Consult
-  ///   your hardware manual.
+  /// * The safety rules of reading/writing this address depend on the device.
+  ///   Consult your hardware manual.
   #[inline]
   pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
     let mut temp = self.read();
@@ -245,8 +245,8 @@ where
   /// Reads the address, applies the operation, and writes back the new value.
   ///
   /// ## Safety
-  /// * The safety rules of reading this address depend on the device. Consult
-  ///   your hardware manual.
+  /// * The safety rules of reading/writing this address depend on the device.
+  ///   Consult your hardware manual.
   #[inline]
   pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
     let mut temp = self.read();
@@ -261,8 +261,8 @@ where
   /// Reads the address, applies the operation, and writes back the new value.
   ///
   /// ## Safety
-  /// * The safety rules of reading this address depend on the device. Consult
-  ///   your hardware manual.
+  /// * The safety rules of reading/writing this address depend on the device.
+  ///   Consult your hardware manual.
   #[inline]
   pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
     let mut temp = self.read();
