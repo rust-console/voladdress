@@ -34,12 +34,19 @@ use super::*;
 /// ## Safety
 /// This type's safety follows the "unsafe creation, then safe use" strategy.
 ///
-/// * Validity Invariant: The address of a `VolAddress` must always be non-zero,
-///   or you will instantly trigger UB.
-/// * Safety Invariant: The address of a `VolAddress` must be an aligned and
+/// * **Validity Invariant**: The address of a `VolAddress` must always be
+///   non-zero, or you will instantly trigger UB.
+/// * **Safety Invariant**: The address of a `VolAddress` must be an aligned and
 ///   legal address for a `T` type value (with correct `R` and `W` permissions)
 ///   within the device's memory space, otherwise the `read` and `write` methods
 ///   will trigger UB when called.
+/// * **Synchronization Invariant**: Volatile access has **no** cross-thread
+///   synchronization behavior within the LLVM memory model. The results of
+///   *all* volatile access is target-dependent, including cross-thread access.
+///   Volatile access has no automatic synchronization of its own, and so if
+///   your target requires some sort of synchronization for volatile accesses of
+///   the address in question you must provide the appropriate synchronization
+///   in some way external to this type.
 #[repr(transparent)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolAddress<T, R, W> {
