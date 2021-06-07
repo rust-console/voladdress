@@ -84,6 +84,86 @@ impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
   pub const fn iter(self) -> VolSeriesIter<T, R, W, S> {
     VolSeriesIter { base: self.base, count: C }
   }
+
+  /// Makes an iterator over the range bounds given.
+  ///
+  /// If the range given is empty then your iterator will be empty.
+  ///
+  /// ## Panics
+  /// * If the start or end of the range are out of bounds for the series.
+  #[inline]
+  #[must_use]
+  #[track_caller]
+  pub fn iter_range<RB: core::ops::RangeBounds<usize>>(
+    self, r: RB,
+  ) -> VolSeriesIter<T, R, W, S> {
+    // TODO: some day make this a const fn, once start_bound and end_bound are
+    // made into const fn, but that requires const trait impls.
+    use core::ops::Bound;
+    let start_inclusive: usize = match r.start_bound() {
+      Bound::Included(i) => *i,
+      Bound::Excluded(x) => x + 1,
+      Bound::Unbounded => 0,
+    };
+    assert!(start_inclusive < C);
+    let end_exclusive: usize = match r.end_bound() {
+      Bound::Included(i) => i + 1,
+      Bound::Excluded(x) => *x,
+      Bound::Unbounded => C,
+    };
+    assert!(end_exclusive <= C);
+    //extern crate std;
+    //std::println!("start_bound {:?}", r.start_bound());
+    //std::println!("end_bound {:?}", r.end_bound());
+    //std::println!("start_inclusive {:?}", start_inclusive);
+    //std::println!("end_exclusive {:?}", end_exclusive);
+    let count = end_exclusive.saturating_sub(start_inclusive);
+    VolSeriesIter { base: self.index(start_inclusive), count }
+  }
+}
+
+#[test]
+fn test_volseries_iter_range() {
+  let series: VolSeries<u8, Unsafe, Unsafe, 10, 1> =
+    unsafe { VolSeries::new(1) };
+  //
+  let i = series.iter_range(..);
+  assert_eq!(i.base.as_usize(), 1);
+  assert_eq!(i.count, 10);
+  //
+  let i = series.iter_range(2..);
+  assert_eq!(i.base.as_usize(), 1 + 2);
+  assert_eq!(i.count, 10 - 2);
+  //
+  let i = series.iter_range(2..=5);
+  assert_eq!(i.base.as_usize(), 1 + 2);
+  assert_eq!(i.count, 4);
+  //
+  let i = series.iter_range(..4);
+  assert_eq!(i.base.as_usize(), 1);
+  assert_eq!(i.count, 4);
+  //
+  let i = series.iter_range(..=4);
+  assert_eq!(i.base.as_usize(), 1);
+  assert_eq!(i.count, 5);
+}
+
+#[test]
+#[should_panic]
+fn test_volseries_iter_range_low_bound_panic() {
+  let series: VolSeries<u8, Unsafe, Unsafe, 10, 1> =
+    unsafe { VolSeries::new(1) };
+  //
+  let _i = series.iter_range(10..);
+}
+
+#[test]
+#[should_panic]
+fn test_volseries_iter_range_high_bound_panic() {
+  let series: VolSeries<u8, Unsafe, Unsafe, 10, 1> =
+    unsafe { VolSeries::new(1) };
+  //
+  let _i = series.iter_range(..=10);
 }
 
 impl<T, R, W, const C: usize, const S: usize> Clone
