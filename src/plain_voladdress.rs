@@ -8,6 +8,14 @@ use super::*;
 /// This type stores a memory address and provides ergonomic volatile access to
 /// said memory address.
 ///
+/// Note that this type has several methods for accessing the data at the
+/// address specified, and a particular instance of this type can use them
+/// unsafely, use them safely, or not use them at all based on the generic
+/// values of `R` and `W` (explained below).
+/// * `read`
+/// * `write`
+/// * `apply` (reads, runs a function, then writes)
+///
 /// ## Generic Parameters
 ///
 /// * `T`: The type of the value stored at the address.
@@ -145,6 +153,7 @@ impl<T, R, W> VolAddress<T, R, W> {
     }
   }
 }
+
 impl<T, W> VolAddress<T, Safe, W>
 where
   T: Copy,
@@ -153,6 +162,8 @@ where
   #[inline]
   #[must_use]
   pub fn read(self) -> T {
+    // Safety: The declarer of the value gave this a `Safe` read typing, thus
+    // they've asserted that this is a safe to read address.
     unsafe { read_volatile(self.address.get() as *const T) }
   }
 }
@@ -171,6 +182,7 @@ where
     read_volatile(self.address.get() as *const T)
   }
 }
+
 impl<T, R> VolAddress<T, R, Safe>
 where
   T: Copy,
@@ -178,6 +190,8 @@ where
   /// Volatile writes a new value to `A`.
   #[inline]
   pub fn write(self, t: T) {
+    // Safety: The declarer of the value gave this a `Safe` write typing, thus
+    // they've asserted that this is a safe to write address.
     unsafe { write_volatile(self.address.get() as *mut T, t) }
   }
 }
@@ -188,11 +202,72 @@ where
   /// Volatile writes a new value to `A`.
   ///
   /// ## Safety
-  /// * The safety rules of reading this address depend on the device. Consult
+  /// * The safety rules of writing this address depend on the device. Consult
   ///   your hardware manual.
   #[inline]
   pub unsafe fn write(self, t: T) {
     write_volatile(self.address.get() as *mut T, t)
+  }
+}
+
+impl<T> VolAddress<T, Safe, Safe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  #[inline]
+  pub fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+impl<T> VolAddress<T, Unsafe, Safe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading/writing this address depend on the device.
+  ///   Consult your hardware manual.
+  #[inline]
+  pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+impl<T> VolAddress<T, Safe, Unsafe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading/writing this address depend on the device.
+  ///   Consult your hardware manual.
+  #[inline]
+  pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
+  }
+}
+impl<T> VolAddress<T, Unsafe, Unsafe>
+where
+  T: Copy,
+{
+  /// Reads the address, applies the operation, and writes back the new value.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading/writing this address depend on the device.
+  ///   Consult your hardware manual.
+  #[inline]
+  pub unsafe fn apply<F: FnOnce(&mut T)>(self, op: F) {
+    let mut temp = self.read();
+    op(&mut temp);
+    self.write(temp);
   }
 }
 
