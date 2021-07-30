@@ -95,6 +95,24 @@ impl<T, R, W> VolAddress<T, R, W> {
     }
   }
 
+  /// Changes the permissions of the address to the new read and write
+  /// permissions specified.
+  ///
+  /// ## Safety
+  /// * As per the type docs
+  #[inline]
+  #[must_use]
+  pub const unsafe fn change_permissions<NEW_R, NEW_W>(
+    self,
+  ) -> VolAddress<T, NEW_R, NEW_W> {
+    VolAddress {
+      address: self.address,
+      target: PhantomData,
+      read_status: PhantomData,
+      write_status: PhantomData,
+    }
+  }
+
   /// Converts the `VolAddress` back into a normal `usize` value.
   #[inline]
   #[must_use]
