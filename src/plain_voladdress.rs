@@ -102,9 +102,9 @@ impl<T, R, W> VolAddress<T, R, W> {
   /// * As per the type docs
   #[inline]
   #[must_use]
-  pub const unsafe fn change_permissions<NEW_R, NEW_W>(
+  pub const unsafe fn change_permissions<NewRead, NewWrite>(
     self,
-  ) -> VolAddress<T, NEW_R, NEW_W> {
+  ) -> VolAddress<T, NewRead, NewWrite> {
     VolAddress {
       address: self.address,
       target: PhantomData,
