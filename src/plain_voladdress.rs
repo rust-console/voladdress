@@ -178,7 +178,6 @@ where
 {
   /// Volatile reads the current value of `A`.
   #[inline]
-  #[must_use]
   pub fn read(self) -> T {
     // Safety: The declarer of the value gave this a `Safe` read typing, thus
     // they've asserted that this is a safe to read address.
@@ -195,7 +194,6 @@ where
   /// * The safety rules of reading this address depend on the device. Consult
   ///   your hardware manual.
   #[inline]
-  #[must_use]
   pub unsafe fn read(self) -> T {
     read_volatile(self.address.get() as *const T)
   }
