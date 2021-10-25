@@ -119,9 +119,15 @@ mod volseries;
 pub use volseries::*;
 
 /// Lets you put "Safe" into a generic type parameter.
+///
+/// This type affects the read and write methods of the volatile address types,
+/// but has no effect on its own.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Safe;
 
 /// Lets you put "Unsafe" into a generic type parameter.
+///
+/// This type affects the read and write methods of the volatile address types,
+/// but has no effect on its own.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Unsafe;
