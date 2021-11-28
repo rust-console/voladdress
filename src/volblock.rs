@@ -104,11 +104,6 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
       Bound::Unbounded => C,
     };
     assert!(end_exclusive <= C);
-    //extern crate std;
-    //std::println!("start_bound {:?}", r.start_bound());
-    //std::println!("end_bound {:?}", r.end_bound());
-    //std::println!("start_inclusive {:?}", start_inclusive);
-    //std::println!("end_exclusive {:?}", end_exclusive);
     let count = end_exclusive.saturating_sub(start_inclusive);
     VolBlockIter { base: self.index(start_inclusive), count }
   }
