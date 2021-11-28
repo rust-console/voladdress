@@ -155,3 +155,69 @@ impl<T, R, W> VolRegion<T, R, W> {
     self.sub_slice(r).iter()
   }
 }
+
+impl<T, W> VolRegion<T, Safe, W>
+where
+  T: Copy,
+{
+  /// Volatile reads each element into the provided buffer.
+  ///
+  /// ## Panics
+  /// * If the buffer's length is not *exactly* this region's length.
+  #[inline]
+  pub fn read_to_slice(self, buffer: &mut [T]) {
+    assert_eq!(self.len, buffer.len());
+    self.iter().zip(buffer.iter_mut()).for_each(|(va, s)| *s = va.read())
+  }
+}
+impl<T, W> VolRegion<T, Unsafe, W>
+where
+  T: Copy,
+{
+  /// Volatile reads each element into the provided buffer.
+  ///
+  /// ## Panics
+  /// * If the buffer's length is not *exactly* this region's length.
+  ///
+  /// ## Safety
+  /// * The safety rules of reading this address depend on the device. Consult
+  ///   your hardware manual.
+  #[inline]
+  pub unsafe fn read_to_slice(self, buffer: &mut [T]) {
+    assert_eq!(self.len, buffer.len());
+    self.iter().zip(buffer.iter_mut()).for_each(|(va, s)| *s = va.read())
+  }
+}
+
+impl<T, R> VolRegion<T, R, Safe>
+where
+  T: Copy,
+{
+  /// Volatile all slice elements into this region.
+  ///
+  /// ## Panics
+  /// * If the buffer's length is not *exactly* this region's length.
+  #[inline]
+  pub fn write_from_slice(self, buffer: &[T]) {
+    assert_eq!(self.len, buffer.len());
+    self.iter().zip(buffer.iter()).for_each(|(va, s)| va.write(*s))
+  }
+}
+impl<T, R> VolRegion<T, R, Unsafe>
+where
+  T: Copy,
+{
+  /// Volatile all slice elements into this region.
+  ///
+  /// ## Panics
+  /// * If the buffer's length is not *exactly* this region's length.
+  ///
+  /// ## Safety
+  /// * The safety rules of writing this address depend on the device. Consult
+  ///   your hardware manual.
+  #[inline]
+  pub unsafe fn write_from_slice(self, buffer: &[T]) {
+    assert_eq!(self.len, buffer.len());
+    self.iter().zip(buffer.iter()).for_each(|(va, s)| va.write(*s))
+  }
+}
