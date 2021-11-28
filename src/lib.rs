@@ -109,8 +109,8 @@ use core::{
   ptr::{read_volatile, write_volatile},
 };
 
-mod plain_voladdress;
-pub use plain_voladdress::*;
+mod voladdress_;
+pub use voladdress_::*;
 
 mod volblock;
 pub use volblock::*;

@@ -1,8 +1,5 @@
 use super::*;
 
-// Note(Lokathor): We would call this module `voladdress` but then it would
-// conflict with the crate name itself.
-
 /// A volatile address.
 ///
 /// This type stores a memory address and provides ergonomic volatile access to
