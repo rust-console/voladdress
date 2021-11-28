@@ -19,7 +19,7 @@ use super::*;
 #[repr(transparent)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolBlock<T, R, W, const C: usize> {
-  base: VolAddress<T, R, W>,
+  pub(crate) base: VolAddress<T, R, W>,
 }
 
 impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {

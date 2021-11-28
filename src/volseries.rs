@@ -20,7 +20,7 @@ use super::*;
 #[repr(transparent)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VolSeries<T, R, W, const C: usize, const S: usize> {
-  base: VolAddress<T, R, W>,
+  pub(crate) base: VolAddress<T, R, W>,
 }
 
 impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
