@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1
+## 1.0.2
 
 * Temporarily adds the `experimental_volregion` feature, allowing a person to
   *experimentally* opt-in to the `VolRegion` type. This type will be part of a
