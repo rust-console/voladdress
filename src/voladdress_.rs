@@ -169,6 +169,21 @@ impl<T, R, W> VolAddress<T, R, W> {
   }
 }
 
+impl<T, R, W, const C: usize> VolAddress<[T; C], R, W> {
+  /// Converts an address for an array to a block for each element of the array.
+  ///
+  /// ## Safety
+  /// * As per the `VolBlock` construction rules.
+  /// * It is *highly likely* that on any device this is safe, but because of
+  ///   possible strangeness with volatile side effects this is marked as an
+  ///   `unsafe` method.
+  #[inline]
+  #[must_use]
+  pub const unsafe fn as_volblock(self) -> VolBlock<T, R, W, C> {
+    VolBlock { base: self.cast::<T>() }
+  }
+}
+
 impl<T, W> VolAddress<T, Safe, W>
 where
   T: Copy,

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1
+
+* You can now (unsafely) easily convert between an address to an array and a
+  block of the same size.
+
 ## 1.0.2
 
 * Temporarily adds the `experimental_volregion` feature, allowing a person to
