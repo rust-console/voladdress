@@ -112,6 +112,18 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
     let count = end_exclusive.saturating_sub(start_inclusive);
     VolBlockIter { base: self.index(start_inclusive), count }
   }
+
+  /// View the volatile block as an equivalent spanned region.
+  ///
+  /// This method exists because unfortunately the typing of the `Deref` trait
+  /// doesn't allow for a Block to deref into a Region, so we have to provide
+  /// the conversion through this manual method.
+  #[inline]
+  #[must_use]
+  #[cfg(feature = "experimental_volregion")]
+  pub const fn as_region(self) -> VolRegion<T, R, W> {
+    VolRegion { addr: self.base, len: C }
+  }
 }
 
 #[test]

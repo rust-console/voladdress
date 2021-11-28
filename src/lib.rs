@@ -118,6 +118,11 @@ pub use volblock::*;
 mod volseries;
 pub use volseries::*;
 
+#[cfg(feature = "experimental_volregion")]
+mod volregion;
+#[cfg(feature = "experimental_volregion")]
+pub use volregion::*;
+
 /// Lets you put "Safe" into a generic type parameter.
 ///
 /// This type affects the read and write methods of the volatile address types,

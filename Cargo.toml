@@ -8,3 +8,13 @@ edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
 
 [dependencies]
+
+[features]
+default = ["experimental_volregion"]
+
+# Not Part Of Semver!!! This is support for an experimental type that will
+# become a stable part of the crate in `voladdress-1.1`, and until then the
+# precise details are subject to change. Once the VolRegion type becomes stable
+# this feature will go away. By activating this feature you agree that you've
+# opted out of semver for this part of the crate.
+experimental_volregion = []
