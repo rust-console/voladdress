@@ -17,4 +17,4 @@ license = "Zlib OR Apache-2.0 OR MIT"
 # opted out of semver for this part of the crate.
 experimental_volregion = []
 
-default = ["experimental_volregion"]
+#default = ["experimental_volregion"] # don't publish while this is uncommented!
