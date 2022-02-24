@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1
+## 1.1 (CURRENTLY UNRELEASED)
 
 * You can now (unsafely) easily convert between an address to an array and a
   block of the same size.
