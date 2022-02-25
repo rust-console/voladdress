@@ -221,3 +221,22 @@ where
     self.iter().zip(buffer.iter()).for_each(|(va, s)| va.write(*s))
   }
 }
+
+#[test]
+fn test_volregion_sub_slice() {
+  let region: VolRegion<u8, Unsafe, Unsafe> =
+    unsafe { VolRegion::from_raw_parts(VolAddress::new(1), 10) };
+  assert_eq!(region.len, 10);
+
+  let sub_region = region.sub_slice(..);
+  assert_eq!(sub_region.len, 10);
+
+  let sub_region = region.sub_slice(2..);
+  assert_eq!(sub_region.len, 10 - 2);
+
+  let sub_region = region.sub_slice(..3);
+  assert_eq!(sub_region.len, 3);
+
+  let sub_region = region.sub_slice(4..6);
+  assert_eq!(sub_region.len, 2);
+}
