@@ -115,6 +115,9 @@ pub use voladdress_::*;
 mod volblock;
 pub use volblock::*;
 
+mod volmatrix;
+pub use volmatrix::*;
+
 mod volseries;
 pub use volseries::*;
 
