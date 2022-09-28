@@ -1,9 +1,12 @@
 # Changelog
 
-## 1.1 (CURRENTLY UNRELEASED)
+## 1.1
 
-* You can now (unsafely) easily convert between an address to an array and a
-  block of the same size.
+* Added `VolAddress::as_volblock` for (unsafely) converting from a `VolAddress`
+  to an array and a `VolBlock`.
+
+* Also adds the `experimental_volmatrix` cargo feature, which adds another
+  opt-in type for people to experiment with.
 
 ## 1.0.2
 
