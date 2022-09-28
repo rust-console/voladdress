@@ -16,5 +16,7 @@ license = "Zlib OR Apache-2.0 OR MIT"
 # this feature will go away. By activating this feature you agree that you've
 # opted out of semver for this part of the crate.
 experimental_volregion = []
+# same as above
+experimental_volmatrix = []
 
 #default = ["experimental_volregion"] # don't publish while this is uncommented!

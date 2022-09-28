@@ -115,11 +115,13 @@ pub use voladdress_::*;
 mod volblock;
 pub use volblock::*;
 
-mod volmatrix;
-pub use volmatrix::*;
-
 mod volseries;
 pub use volseries::*;
+
+#[cfg(feature = "experimental_volmatrix")]
+mod volmatrix;
+#[cfg(feature = "experimental_volmatrix")]
+pub use volmatrix::*;
 
 #[cfg(feature = "experimental_volregion")]
 mod volregion;
