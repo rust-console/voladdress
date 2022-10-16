@@ -41,6 +41,55 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
     C
   }
 
+  /// Converts the `VolBlock` the `usize` for the start of the block.
+  #[inline]
+  #[must_use]
+  pub const fn as_usize(self) -> usize {
+    self.base.address.get()
+  }
+
+  /// Converts the `VolBlock` into an individual const pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  pub const fn as_ptr(self) -> *const T {
+    self.base.address.get() as *const T
+  }
+
+  /// Converts the `VolBlock` into an individual mut pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  pub const fn as_mut_ptr(self) -> *mut T {
+    self.base.address.get() as *mut T
+  }
+
+  /// Converts the `VolBlock` into a const slice pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  // TODO(2022-10-15): const fn this at some point in the future (1.64 minimum)
+  pub fn as_slice_ptr(self) -> *const [T] {
+    core::ptr::slice_from_raw_parts(self.base.address.get() as *const T, C)
+  }
+
+  /// Converts the `VolBlock` into an individual mut pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  // TODO(2022-10-15): const fn this at some point in the future (unstable)
+  pub fn as_slice_mut_ptr(self) -> *mut [T] {
+    core::ptr::slice_from_raw_parts_mut(self.base.address.get() as *mut T, C)
+  }
+
   /// Indexes to the `i`th position of the memory block.
   ///
   /// ## Panics
@@ -49,15 +98,8 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   #[must_use]
   #[track_caller]
   pub const fn index(self, i: usize) -> VolAddress<T, R, W> {
-    if i < C {
-      unsafe { self.base.add(i) }
-    } else {
-      // Note(Lokathor): We force a const panic by indexing out of bounds.
-      #[allow(unconditional_panic)]
-      unsafe {
-        VolAddress::new([usize::MAX][1])
-      }
-    }
+    assert!(i < C);
+    unsafe { self.base.add(i) }
   }
 
   /// Gets the address of the `i`th position, if it's in bounds.

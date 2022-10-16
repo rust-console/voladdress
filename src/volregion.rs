@@ -81,6 +81,55 @@ impl<T, R, W> VolRegion<T, R, W> {
     self.len
   }
 
+  /// Converts the `VolBlock` the `usize` for the start of the block.
+  #[inline]
+  #[must_use]
+  pub const fn as_usize(self) -> usize {
+    self.addr.get()
+  }
+
+  /// Converts the `VolBlock` into an individual const pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  pub const fn as_ptr(self) -> *const T {
+    self.addr.get() as *const T
+  }
+
+  /// Converts the `VolBlock` into an individual mut pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  pub const fn as_mut_ptr(self) -> *mut T {
+    self.addr.get() as *mut T
+  }
+
+  /// Converts the `VolBlock` into a const slice pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  // TODO(2022-10-15): const fn this at some point in the future (1.64 minimum)
+  pub fn as_slice_ptr(self) -> *const [T] {
+    core::ptr::slice_from_raw_parts(self.addr.get() as *const T, self.len)
+  }
+
+  /// Converts the `VolBlock` into an individual mut pointer.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  // TODO(2022-10-15): const fn this at some point in the future (unstable)
+  pub fn as_slice_mut_ptr(self) -> *mut [T] {
+    core::ptr::slice_from_raw_parts_mut(self.addr.get() as *mut T, self.len)
+  }
+
   /// Index into the region.
   ///
   /// ## Panics
