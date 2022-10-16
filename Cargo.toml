@@ -2,7 +2,7 @@
 name = "voladdress"
 description = "A crate for easy volatile memory abstraction."
 repository = "https://github.com/rust-console/voladdress"
-version = "1.2.0"
+version = "1.2.1"
 authors = ["Lokathor <zefria@gmail.com>", "Thomas Winwood <twwinwood@gmail.com>"]
 edition = "2018"
 license = "Zlib OR Apache-2.0 OR MIT"
