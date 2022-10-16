@@ -117,6 +117,26 @@ impl<T, R, W> VolAddress<T, R, W> {
     self.address.get()
   }
 
+  /// Converts the `VolAddress` into const pointer form.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  pub const fn as_ptr(self) -> *const T {
+    self.address.get() as *const T
+  }
+
+  /// Converts the `VolAddress` into mut pointer form.
+  ///
+  /// This should usually only be used when you need to call a foreign function
+  /// that expects a pointer.
+  #[inline]
+  #[must_use]
+  pub const fn as_mut_ptr(self) -> *mut T {
+    self.address.get() as *mut T
+  }
+
   /// Advances the pointer by the given number of positions (`usize`).
   ///
   /// Shorthand for `addr.offset(count as isize)`

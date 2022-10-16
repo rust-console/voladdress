@@ -3,6 +3,7 @@
 ## 1.2
 
 * `Safe` and `Unsafe` now derive `Default`, `Clone`, and `Copy`.
+* Added `as_ptr` and `as_mut_ptr` to `VolAddress`.
 
 ## 1.1
 
