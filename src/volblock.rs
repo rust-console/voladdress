@@ -36,6 +36,7 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   /// The length of this block (in elements).
   #[inline]
   #[must_use]
+  #[allow(clippy::len_without_is_empty)]
   pub const fn len(self) -> usize {
     C
   }
@@ -291,6 +292,8 @@ impl<T, R, W> core::iter::DoubleEndedIterator for VolBlockIter<T, R, W> {
 
 #[test]
 #[allow(bad_style)]
+#[allow(clippy::iter_nth_zero)]
+#[allow(clippy::redundant_clone)]
 fn test_impl_Iterator_for_VolBlockIter() {
   let i: VolBlockIter<u16, (), ()> = VolBlockIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },
@@ -345,6 +348,7 @@ fn test_impl_Iterator_for_VolBlockIter() {
 
 #[test]
 #[allow(bad_style)]
+#[allow(clippy::redundant_clone)]
 fn test_impl_DoubleEndedIterator_for_VolBlockIter() {
   let i: VolBlockIter<u16, (), ()> = VolBlockIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },

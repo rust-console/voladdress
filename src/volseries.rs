@@ -37,6 +37,7 @@ impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
   /// The length of this series (in elements).
   #[inline]
   #[must_use]
+  #[allow(clippy::len_without_is_empty)]
   pub const fn len(self) -> usize {
     C
   }
@@ -297,6 +298,8 @@ impl<T, R, W, const S: usize> core::iter::DoubleEndedIterator
 
 #[test]
 #[allow(bad_style)]
+#[allow(clippy::iter_nth_zero)]
+#[allow(clippy::redundant_clone)]
 fn test_impl_Iterator_for_VolSeriesIter() {
   let i: VolSeriesIter<u16, (), (), 0x100> = VolSeriesIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },
@@ -351,6 +354,7 @@ fn test_impl_Iterator_for_VolSeriesIter() {
 
 #[test]
 #[allow(bad_style)]
+#[allow(clippy::redundant_clone)]
 fn test_impl_DoubleEndedIterator_for_VolSeriesIter() {
   let i: VolSeriesIter<u16, (), (), 0x100> = VolSeriesIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },
