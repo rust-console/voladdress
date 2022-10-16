@@ -11,6 +11,8 @@
   then calling methods on that index generated address was enough to (sometimes)
   confuse LLVM and prevent a lot of optimizations, so we want to support these
   direct conversions.
+* Added `core::fmt::Pointer` impls. While `Debug` formats the address along with
+  extra metadata, `Pointer` just formats the address.
 
 ## 1.1
 
