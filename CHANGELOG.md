@@ -7,10 +7,14 @@
   it doesn't hurt.
 * `VolAddress`: Added const fn `as_ptr` and `as_mut_ptr`.
 * `VolBlock`: Added const fn `as_usize`, `as_ptr`, `as_mut_ptr`, and non-const
-  fn `as_slice_ptr` and `as_slice_mut_ptr`. It turns out that indexing by 0 and
-  then calling methods on that index generated address was enough to (sometimes)
-  confuse LLVM and prevent a lot of optimizations, so we want to support these
-  direct conversions.
+  fn `as_slice_ptr` and `as_slice_mut_ptr`.
+* It turns out that getting the pointer to a `VolBlock` by indexing to the 0th
+  element and then turning that into a usize and then turning that into a
+  pointer was enough layers to confuse LLVM. Specifically, all volatile accesses
+  have an "aligned and non-null" debug check, which wasn't getting optimized out
+  of debug builds with `build-std`, even with `opt-level=3`. Providing these
+  more direct conversion methods does seem to help LLVM eliminate that non-null
+  check more often.
 * Added `core::fmt::Pointer` impls. While `Debug` formats the address along with
   extra metadata, `Pointer` just formats the address.
 
