@@ -23,6 +23,20 @@ pub struct VolSeries<T, R, W, const C: usize, const S: usize> {
   pub(crate) base: VolAddress<T, R, W>,
 }
 
+impl<T, R, W, const C: usize, const S: usize> Clone
+  for VolSeries<T, R, W, C, S>
+{
+  #[inline]
+  #[must_use]
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+impl<T, R, W, const C: usize, const S: usize> Copy
+  for VolSeries<T, R, W, C, S>
+{
+}
+
 impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
   /// Constructs the value.
   ///
@@ -167,32 +181,27 @@ fn test_volseries_iter_range_high_bound_panic() {
   let _i = series.iter_range(..=10);
 }
 
-impl<T, R, W, const C: usize, const S: usize> Clone
-  for VolSeries<T, R, W, C, S>
-{
-  #[inline]
-  #[must_use]
-  fn clone(&self) -> Self {
-    *self
-  }
-}
-impl<T, R, W, const C: usize, const S: usize> Copy
-  for VolSeries<T, R, W, C, S>
-{
-}
-
 impl<T, R, W, const C: usize, const S: usize> core::fmt::Debug
   for VolSeries<T, R, W, C, S>
 {
   #[cold]
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolSeries<{elem_ty}, r{readability}, w{writeability}, c{count}, s{stride:#X}>({address:#X})",
+    write!(f, "VolSeries<{elem_ty}, r{readability}, w{writeability}, c{count}, s{stride:#X}>(0x{address:#X})",
       elem_ty = core::any::type_name::<T>(),
       readability=core::any::type_name::<R>(),
       writeability=core::any::type_name::<W>(),
       count=C,
       stride=S,
       address=self.base.address.get())
+  }
+}
+
+impl<T, R, W, const C: usize, const S: usize> core::fmt::Pointer
+  for VolSeries<T, R, W, C, S>
+{
+  #[cold]
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "0x{address:#X}", address = self.base.address.get())
   }
 }
 

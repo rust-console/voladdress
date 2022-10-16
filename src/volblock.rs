@@ -22,6 +22,15 @@ pub struct VolBlock<T, R, W, const C: usize> {
   pub(crate) base: VolAddress<T, R, W>,
 }
 
+impl<T, R, W, const C: usize> Clone for VolBlock<T, R, W, C> {
+  #[inline]
+  #[must_use]
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+impl<T, R, W, const C: usize> Copy for VolBlock<T, R, W, C> {}
+
 impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   /// Constructs the value.
   ///
@@ -218,24 +227,20 @@ fn test_volblock_iter_range_high_bound_panic() {
   let _i = block.iter_range(..=10);
 }
 
-impl<T, R, W, const C: usize> Clone for VolBlock<T, R, W, C> {
-  #[inline]
-  #[must_use]
-  fn clone(&self) -> Self {
-    *self
-  }
-}
-impl<T, R, W, const C: usize> Copy for VolBlock<T, R, W, C> {}
-
 impl<T, R, W, const C: usize> core::fmt::Debug for VolBlock<T, R, W, C> {
-  #[cold]
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    write!(f, "VolBlock<{elem_ty}, r{readability}, w{writeability}, c{count}>({address:#X})",
+    write!(f, "VolBlock<{elem_ty}, r{readability}, w{writeability}, c{count}>(0x{address:#X})",
       elem_ty = core::any::type_name::<T>(),
       readability=core::any::type_name::<R>(),
       writeability=core::any::type_name::<W>(),
       count=C,
       address=self.base.address.get())
+  }
+}
+
+impl<T, R, W, const C: usize> core::fmt::Pointer for VolBlock<T, R, W, C> {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "0x{address:#X}", address = self.base.address.get())
   }
 }
 

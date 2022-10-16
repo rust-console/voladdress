@@ -61,6 +61,15 @@ pub struct VolAddress<T, R, W> {
   write_status: PhantomData<W>,
 }
 
+impl<T, R, W> Clone for VolAddress<T, R, W> {
+  #[inline]
+  #[must_use]
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+impl<T, R, W> Copy for VolAddress<T, R, W> {}
+
 impl<T, R, W> VolAddress<T, R, W> {
   /// Constructs the value.
   ///
@@ -319,25 +328,21 @@ where
   }
 }
 
-impl<T, R, W> Clone for VolAddress<T, R, W> {
-  #[inline]
-  #[must_use]
-  fn clone(&self) -> Self {
-    *self
-  }
-}
-impl<T, R, W> Copy for VolAddress<T, R, W> {}
-
 impl<T, R, W> core::fmt::Debug for VolAddress<T, R, W> {
-  #[cold]
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     write!(
       f,
-      "VolAddress<{elem_ty}, r{readability}, w{writeability}>({address:#X})",
+      "VolAddress<{elem_ty}, r{readability}, w{writeability}>(0x{address:#X})",
       elem_ty = core::any::type_name::<T>(),
       readability = core::any::type_name::<R>(),
       writeability = core::any::type_name::<W>(),
       address = self.address.get()
     )
+  }
+}
+
+impl<T, R, W> core::fmt::Pointer for VolAddress<T, R, W> {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    write!(f, "0x{address:#X}", address = self.address.get())
   }
 }
