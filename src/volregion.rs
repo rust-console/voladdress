@@ -85,7 +85,7 @@ impl<T, R, W> VolRegion<T, R, W> {
   #[inline]
   #[must_use]
   pub const fn as_usize(self) -> usize {
-    self.addr.get()
+    self.addr.address.get()
   }
 
   /// Converts the `VolBlock` into an individual const pointer.
@@ -95,7 +95,7 @@ impl<T, R, W> VolRegion<T, R, W> {
   #[inline]
   #[must_use]
   pub const fn as_ptr(self) -> *const T {
-    self.addr.get() as *const T
+    self.addr.address.get() as *const T
   }
 
   /// Converts the `VolBlock` into an individual mut pointer.
@@ -105,7 +105,7 @@ impl<T, R, W> VolRegion<T, R, W> {
   #[inline]
   #[must_use]
   pub const fn as_mut_ptr(self) -> *mut T {
-    self.addr.get() as *mut T
+    self.addr.address.get() as *mut T
   }
 
   /// Converts the `VolBlock` into a const slice pointer.
@@ -116,7 +116,10 @@ impl<T, R, W> VolRegion<T, R, W> {
   #[must_use]
   // TODO(2022-10-15): const fn this at some point in the future (1.64 minimum)
   pub fn as_slice_ptr(self) -> *const [T] {
-    core::ptr::slice_from_raw_parts(self.addr.get() as *const T, self.len)
+    core::ptr::slice_from_raw_parts(
+      self.addr.address.get() as *const T,
+      self.len,
+    )
   }
 
   /// Converts the `VolBlock` into an individual mut pointer.
@@ -127,7 +130,10 @@ impl<T, R, W> VolRegion<T, R, W> {
   #[must_use]
   // TODO(2022-10-15): const fn this at some point in the future (unstable)
   pub fn as_slice_mut_ptr(self) -> *mut [T] {
-    core::ptr::slice_from_raw_parts_mut(self.addr.get() as *mut T, self.len)
+    core::ptr::slice_from_raw_parts_mut(
+      self.addr.address.get() as *mut T,
+      self.len,
+    )
   }
 
   /// Index into the region.
