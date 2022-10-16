@@ -2,9 +2,9 @@
 
 ## 1.2
 
-* `Safe` and `Unsafe` now also derive `Default`, `Clone`, and `Copy`. This
-  doesn't do too much since they're already ZSTs with a public constructor, but
-  it doesn't hurt.
+* The `Safe` and `Unsafe` types now also derive `Default`, `Clone`, and `Copy`.
+  This doesn't do too much since they're already ZSTs with a public constructor,
+  but it doesn't hurt.
 * `VolAddress`: Added const fn `as_ptr` and `as_mut_ptr`.
 * `VolBlock`: Added const fn `as_usize`, `as_ptr`, `as_mut_ptr`, and non-const
   fn `as_slice_ptr` and `as_slice_mut_ptr`.
