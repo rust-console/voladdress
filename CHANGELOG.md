@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2
+
+* `Safe` and `Unsafe` now derive `Default`, `Clone`, and `Copy`.
+
 ## 1.1
 
 * Added `VolAddress::as_volblock` for (unsafely) converting from a `VolAddress`

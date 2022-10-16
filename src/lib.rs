@@ -132,12 +132,12 @@ pub use volregion::*;
 ///
 /// This type affects the read and write methods of the volatile address types,
 /// but has no effect on its own.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Safe;
 
 /// Lets you put "Unsafe" into a generic type parameter.
 ///
 /// This type affects the read and write methods of the volatile address types,
 /// but has no effect on its own.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Unsafe;
