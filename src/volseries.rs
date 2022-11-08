@@ -229,12 +229,28 @@ impl<T, R, W, const S: usize> core::iter::Iterator
   type Item = VolAddress<T, R, W>;
 
   #[inline]
-  fn next(&mut self) -> Option<Self::Item> {
-    if self.count > 0 {
-      let out = Some(self.base);
-      self.count -= 1;
-      self.base = unsafe { self.base.cast::<[u8; S]>().add(1).cast::<T>() };
+  fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    if n < self.count {
+      let out = Some(unsafe { self.base.cast::<[u8; S]>().add(n).cast::<T>() });
+      self.count -= n + 1;
+      self.base = unsafe { self.base.cast::<[u8; S]>().add(n + 1).cast::<T>() };
       out
+    } else {
+      self.count = 0;
+      None
+    }
+  }
+
+  #[inline]
+  fn next(&mut self) -> Option<Self::Item> {
+    self.nth(0)
+  }
+
+  #[inline]
+  #[must_use]
+  fn last(mut self) -> Option<Self::Item> {
+    if self.count > 0 {
+      self.nth(self.count - 1)
     } else {
       None
     }
@@ -251,30 +267,6 @@ impl<T, R, W, const S: usize> core::iter::Iterator
   fn count(self) -> usize {
     self.count
   }
-
-  #[inline]
-  #[must_use]
-  fn last(self) -> Option<Self::Item> {
-    if self.count > 0 {
-      Some(unsafe {
-        self.base.cast::<[u8; S]>().add(self.count - 1).cast::<T>()
-      })
-    } else {
-      None
-    }
-  }
-
-  #[inline]
-  fn nth(&mut self, n: usize) -> Option<Self::Item> {
-    if n < self.count {
-      self.count -= n;
-      self.base = unsafe { self.base.cast::<[u8; S]>().add(1 + n).cast::<T>() };
-      Some(self.base)
-    } else {
-      self.count = 0;
-      None
-    }
-  }
 }
 
 impl<T, R, W, const S: usize> core::iter::DoubleEndedIterator
@@ -282,22 +274,17 @@ impl<T, R, W, const S: usize> core::iter::DoubleEndedIterator
 {
   #[inline]
   fn next_back(&mut self) -> Option<Self::Item> {
-    if self.count > 0 {
-      let out = Some(unsafe {
-        self.base.cast::<[u8; S]>().add(self.count - 1).cast::<T>()
-      });
-      self.count -= 1;
-      out
-    } else {
-      None
-    }
+    self.nth_back(0)
   }
 
   #[inline]
   fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
     if n < self.count {
-      self.count -= n;
-      Some(unsafe { self.base.cast::<[u8; S]>().add(1 + n).cast::<T>() })
+      let out = Some(unsafe {
+        self.base.cast::<[u8; S]>().add(self.count - (n + 1)).cast::<T>()
+      });
+      self.count -= n + 1;
+      out
     } else {
       self.count = 0;
       None
@@ -306,9 +293,6 @@ impl<T, R, W, const S: usize> core::iter::DoubleEndedIterator
 }
 
 #[test]
-#[allow(bad_style)]
-#[allow(clippy::iter_nth_zero)]
-#[allow(clippy::redundant_clone)]
 fn test_impl_Iterator_for_VolSeriesIter() {
   let i: VolSeriesIter<u16, (), (), 0x100> = VolSeriesIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },
@@ -362,8 +346,6 @@ fn test_impl_Iterator_for_VolSeriesIter() {
 }
 
 #[test]
-#[allow(bad_style)]
-#[allow(clippy::redundant_clone)]
 fn test_impl_DoubleEndedIterator_for_VolSeriesIter() {
   let i: VolSeriesIter<u16, (), (), 0x100> = VolSeriesIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },

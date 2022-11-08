@@ -266,12 +266,28 @@ impl<T, R, W> core::iter::Iterator for VolBlockIter<T, R, W> {
   type Item = VolAddress<T, R, W>;
 
   #[inline]
-  fn next(&mut self) -> Option<Self::Item> {
-    if self.count > 0 {
-      let out = Some(self.base);
-      self.count -= 1;
-      self.base = unsafe { self.base.add(1) };
+  fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    if n < self.count {
+      let out = Some(unsafe { self.base.add(n) });
+      self.count -= n + 1;
+      self.base = unsafe { self.base.add(n + 1) };
       out
+    } else {
+      self.count = 0;
+      None
+    }
+  }
+
+  #[inline]
+  fn next(&mut self) -> Option<Self::Item> {
+    self.nth(0)
+  }
+
+  #[inline]
+  #[must_use]
+  fn last(mut self) -> Option<Self::Item> {
+    if self.count > 0 {
+      self.nth(self.count - 1)
     } else {
       None
     }
@@ -288,48 +304,20 @@ impl<T, R, W> core::iter::Iterator for VolBlockIter<T, R, W> {
   fn count(self) -> usize {
     self.count
   }
-
-  #[inline]
-  #[must_use]
-  fn last(self) -> Option<Self::Item> {
-    if self.count > 0 {
-      Some(unsafe { self.base.add(self.count - 1) })
-    } else {
-      None
-    }
-  }
-
-  // Note(Lokathor): This override will also speed up `skip`.
-  #[inline]
-  fn nth(&mut self, n: usize) -> Option<Self::Item> {
-    if n < self.count {
-      self.count -= n;
-      self.base = unsafe { self.base.add(1 + n) };
-      Some(self.base)
-    } else {
-      self.count = 0;
-      None
-    }
-  }
 }
 
 impl<T, R, W> core::iter::DoubleEndedIterator for VolBlockIter<T, R, W> {
   #[inline]
   fn next_back(&mut self) -> Option<Self::Item> {
-    if self.count > 0 {
-      let out = Some(unsafe { self.base.add(self.count - 1) });
-      self.count -= 1;
-      out
-    } else {
-      None
-    }
+    self.nth_back(0)
   }
 
   #[inline]
   fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
     if n < self.count {
-      self.count -= n;
-      Some(unsafe { self.base.add(1 + n) })
+      let out = Some(unsafe { self.base.add(self.count - (n + 1)) });
+      self.count -= n + 1;
+      out
     } else {
       self.count = 0;
       None
@@ -338,9 +326,6 @@ impl<T, R, W> core::iter::DoubleEndedIterator for VolBlockIter<T, R, W> {
 }
 
 #[test]
-#[allow(bad_style)]
-#[allow(clippy::iter_nth_zero)]
-#[allow(clippy::redundant_clone)]
 fn test_impl_Iterator_for_VolBlockIter() {
   let i: VolBlockIter<u16, (), ()> = VolBlockIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },
@@ -394,8 +379,6 @@ fn test_impl_Iterator_for_VolBlockIter() {
 }
 
 #[test]
-#[allow(bad_style)]
-#[allow(clippy::redundant_clone)]
 fn test_impl_DoubleEndedIterator_for_VolBlockIter() {
   let i: VolBlockIter<u16, (), ()> = VolBlockIter {
     base: unsafe { VolAddress::new(core::mem::align_of::<u16>()) },
