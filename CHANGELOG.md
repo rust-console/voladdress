@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2
+
+* **Soundness:** Previous versions of the iterators in
+  this crate (since 0.4) had a math error in the `nth`
+  method, causing them to potentially go out of bounds.
+
 ## 1.2
 
 * The `Safe` and `Unsafe` types now also derive `Default`, `Clone`, and `Copy`.
