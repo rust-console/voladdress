@@ -274,22 +274,15 @@ impl<T, R, W, const S: usize> core::iter::DoubleEndedIterator
 {
   #[inline]
   fn next_back(&mut self) -> Option<Self::Item> {
-    if self.count > 0 {
-      let out = Some(unsafe {
-        self.base.cast::<[u8; S]>().add(self.count - 1).cast::<T>()
-      });
-      self.count -= 1;
-      out
-    } else {
-      None
-    }
+    self.nth_back(0)
   }
 
   #[inline]
   fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
     if n < self.count {
-      let out =
-        Some(unsafe { self.base.cast::<[u8; S]>().add(self.count - (n + 1)).cast::<T>() });
+      let out = Some(unsafe {
+        self.base.cast::<[u8; S]>().add(self.count - (n + 1)).cast::<T>()
+      });
       self.count -= n;
       out
     } else {
