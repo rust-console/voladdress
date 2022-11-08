@@ -283,7 +283,7 @@ impl<T, R, W, const S: usize> core::iter::DoubleEndedIterator
       let out = Some(unsafe {
         self.base.cast::<[u8; S]>().add(self.count - (n + 1)).cast::<T>()
       });
-      self.count -= n;
+      self.count -= n + 1;
       out
     } else {
       self.count = 0;
