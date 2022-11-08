@@ -1,5 +1,8 @@
 #![no_std]
 #![deny(missing_docs)]
+#![allow(clippy::iter_nth_zero)]
+#![cfg_attr(test, allow(clippy::redundant_clone))]
+#![cfg_attr(test, allow(bad_style))]
 
 //! A crate for working with volatile locations, particularly Memory Mapped IO
 //! (MMIO).
