@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.3
+
+* Fixed up unclear documentation.
+
 ## 1.2.2
 
 * **Soundness:** Previous versions of the iterators in
