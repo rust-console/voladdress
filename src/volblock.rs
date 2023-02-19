@@ -78,9 +78,6 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   }
 
   /// Converts the `VolBlock` into a const slice pointer.
-  ///
-  /// This should usually only be used when you need to call a foreign function
-  /// that expects a pointer.
   #[inline]
   #[must_use]
   // TODO(2022-10-15): const fn this at some point in the future (1.64 minimum)
@@ -88,10 +85,7 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
     core::ptr::slice_from_raw_parts(self.base.address.get() as *const T, C)
   }
 
-  /// Converts the `VolBlock` into an individual mut pointer.
-  ///
-  /// This should usually only be used when you need to call a foreign function
-  /// that expects a pointer.
+  /// Converts the `VolBlock` into a mut slice pointer.
   #[inline]
   #[must_use]
   // TODO(2022-10-15): const fn this at some point in the future (unstable)
