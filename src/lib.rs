@@ -121,14 +121,10 @@ pub use volblock::*;
 mod volseries;
 pub use volseries::*;
 
-#[cfg(feature = "experimental_volmatrix")]
 mod volmatrix;
-#[cfg(feature = "experimental_volmatrix")]
 pub use volmatrix::*;
 
-#[cfg(feature = "experimental_volregion")]
 mod volregion;
-#[cfg(feature = "experimental_volregion")]
 pub use volregion::*;
 
 /// Lets you put "Safe" into a generic type parameter.
