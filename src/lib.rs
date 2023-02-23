@@ -121,8 +121,8 @@ pub use volblock::*;
 mod volseries;
 pub use volseries::*;
 
-mod volgrid;
-pub use volgrid::*;
+mod volgrid2d;
+pub use volgrid2d::*;
 
 mod volregion;
 pub use volregion::*;
