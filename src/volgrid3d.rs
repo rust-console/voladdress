@@ -1,4 +1,4 @@
-use crate::{VolAddress, VolBlock};
+use crate::{VolAddress, VolBlock, VolGrid2d};
 
 /// A 3D version of [`VolGrid2d`], with a `FRAME` dimension as well.
 ///
@@ -117,7 +117,7 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize, const FRAMES: usize>
 
 /// Row frame methods.
 impl<T, R, W, const WIDTH: usize, const HEIGHT: usize, const FRAMES: usize>
-  VolGrid3d<T, R, W, WIDTH, HEIGHT>
+  VolGrid3d<T, R, W, WIDTH, HEIGHT, FRAMES>
 {
   /// Get a single row of the matrix as a [`VolBlock`].
   #[inline]
