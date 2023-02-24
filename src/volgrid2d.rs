@@ -3,7 +3,7 @@ use crate::{VolAddress, VolBlock};
 /// A 2D version of [`VolBlock`], with a const generic `WIDTH` and `HEIGHT`.
 ///
 /// This is intended for "video-like" memory that is better to logically access
-/// with an `x` and `y` positoin rather than a single `i` index. It's just an
+/// with an `x` and `y` position rather than a single `i` index. It's just an
 /// alternative way to manage a `VolBlock`.
 ///
 /// ## Generic Parameters
