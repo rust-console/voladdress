@@ -1,6 +1,10 @@
 use crate::{VolAddress, VolBlock};
 
-/// A 2D version of [`VolBlock`] with a given `WIDTH` and `HEIGHT`.
+/// A 2D version of [`VolBlock`], with a const generic `WIDTH` and `HEIGHT`.
+///
+/// This is intended for "video-like" memory that is better to logically access
+/// with an `x` and `y` positoin rather than a single `i` index. It's just an
+/// alternative way to manage a `VolBlock`.
 ///
 /// ## Generic Parameters
 /// * `T` / `R` / `W`: These parameters are applied to the [`VolAddress`] type
@@ -14,18 +18,32 @@ use crate::{VolAddress, VolBlock};
 /// * The address space must legally contain `WIDTH * HEIGHT` contiguous values
 ///   of the `T` type, starting from the base address.
 /// * The memory block must not wrap around past the end of the address space.
-pub struct VolMatrix<T, R, W, const WIDTH: usize, const HEIGHT: usize> {
+pub struct VolGrid2d<T, R, W, const WIDTH: usize, const HEIGHT: usize> {
   base: VolAddress<T, R, W>,
 }
 
 /// Direct index access methods.
 impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
-  VolMatrix<T, R, W, WIDTH, HEIGHT>
+  VolGrid2d<T, R, W, WIDTH, HEIGHT>
 {
-  // TODO: one day in the distant future, when full const_generic is
-  // implemented in rust, someone may be interested in coming down from their
-  // flying car, replace the `B` parameter by `{ WIDTH * HEIGHT }` and remove
-  // the assert! (same with into_block)
+  /// A [`VolAddress`] with matrix-style access pattern.
+  ///
+  /// # Safety
+  ///
+  /// The given address must be a valid [`VolAddress`] at each position in the
+  /// matrix:
+  ///
+  /// ```text
+  /// for all (X, Y) in (0..WIDTH, 0..HEIGHT):
+  ///     let accessible = address + mem::size_of::<T>() * (X + WIDTH * Y);
+  ///     assert_valid_voladdress(accessible);
+  /// ```
+  #[inline]
+  #[must_use]
+  pub const unsafe fn new(address: usize) -> Self {
+    Self { base: VolAddress::new(address) }
+  }
+
   /// Create a two-dimensional table from a 1D `VolBlock`.
   ///
   /// # Panics
@@ -35,6 +53,10 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
   #[inline]
   #[must_use]
   pub const fn from_block<const B: usize>(block: VolBlock<T, R, W, B>) -> Self {
+    // TODO: one day in the distant future, when full const_generic is
+    // implemented in rust, someone may be interested in coming down from their
+    // flying car, replace the `B` parameter by `{ WIDTH * HEIGHT }` and remove
+    // the assert! (same with into_block)
     assert!(B == WIDTH * HEIGHT);
     // SAFETY: block's safety requirement is that all VolAddress accessible within
     // it are safe, Self can only access those addresses, so Self::new requirement
@@ -54,27 +76,10 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
   pub const fn into_block<const B: usize>(self) -> VolBlock<T, R, W, B> {
     assert!(B == WIDTH * HEIGHT);
     // SAFETY: block's safety requirement is that all VolAddress accessible within
-    // it are safe, all constructors of `VolMatrix` already guarantees that.
+    // it are safe, all constructors of `VolGrid2d` already guarantees that.
     VolBlock { base: self.base }
   }
 
-  /// A [`VolAddress`] with matrix-style access pattern.
-  ///
-  /// # Safety
-  ///
-  /// The given address must be a valid [`VolAddress`] at each position in the
-  /// matrix:
-  ///
-  /// ```text
-  /// for all (X, Y) in (0..WIDTH, 0..HEIGHT):
-  ///     let accessible = address + mem::size_of::<T>() * (X + WIDTH * Y);
-  ///     assert_valid_voladdress(accessible);
-  /// ```
-  #[inline]
-  #[must_use]
-  pub const unsafe fn new(address: usize) -> Self {
-    Self { base: VolAddress::new(address) }
-  }
   /// Get the [`VolAddress`] at specified matrix location, returns
   /// `None` if out of bound.
   #[inline]
@@ -112,7 +117,7 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
 
 /// Row access methods.
 impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
-  VolMatrix<T, R, W, WIDTH, HEIGHT>
+  VolGrid2d<T, R, W, WIDTH, HEIGHT>
 {
   /// Get a single row of the matrix as a [`VolBlock`].
   #[inline]
@@ -121,7 +126,7 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
     if y < HEIGHT {
       // SAFETY:
       // - `y < HEIGHT`
-      // - `VolMatrix::new` safety condition guarantees that all addresses
+      // - `VolGrid2d::new` safety condition guarantees that all addresses
       //   constructible for `VolBlock<T, WIDTH>` are valid `VolAddress`,
       //   which is the safety condition of `VolBlock::new`.
       Some(unsafe { VolBlock { base: self.base.add(y * WIDTH) } })
@@ -134,11 +139,11 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
 /*
 # This requires extended const_generic support, which is highly not going
 # to happen soon in stable, so we feature-gate.
-volmatrix_column = []
+VolGrid2d_column = []
 /// Column access methods.
-#[cfg(feature = "volmatrix_column")]
+#[cfg(feature = "VolGrid2d_column")]
 impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
-  VolMatrix<T, R, W, WIDTH, HEIGHT>
+  VolGrid2d<T, R, W, WIDTH, HEIGHT>
 {
   /// Get a signle column of the matrix as a [`VolSeries`].
   #[inline]
@@ -150,7 +155,7 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
     if x < WIDTH {
       // SAFETY:
       // - `x < WIDTH` (hence, will never spill out of the matrix)
-      // - `VolMatrix::new` safety condition guarantees that all addresses
+      // - `VolGrid2d::new` safety condition guarantees that all addresses
       //   constructible for `VolSeries<T, HEIGHT, …>` are valid `VolAddress`,
       //   which is the safety condition of `VolSeries::new`.
       Some(unsafe { VolSeries { base: self.base.add(x) } })
