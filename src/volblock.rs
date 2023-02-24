@@ -161,7 +161,6 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   /// the conversion through this manual method.
   #[inline]
   #[must_use]
-  #[cfg(feature = "experimental_volregion")]
   pub const fn as_region(self) -> VolRegion<T, R, W> {
     VolRegion { addr: self.base, len: C }
   }
