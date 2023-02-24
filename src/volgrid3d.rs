@@ -102,7 +102,7 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize, const FRAMES: usize>
   #[must_use]
   #[track_caller]
   pub const fn index(self, x: usize, y: usize, z: usize) -> VolAddress<T, R, W> {
-    match self.get(x, y) {
+    match self.get(x, y, z) {
       Some(address) => address,
       None => {
         // Note(Lokathor): We force a const panic by indexing out of bounds.
