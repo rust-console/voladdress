@@ -22,29 +22,22 @@ pub struct VolGrid2d<T, R, W, const WIDTH: usize, const HEIGHT: usize> {
   pub(crate) base: VolAddress<T, R, W>,
 }
 
-/// Direct index access methods.
 impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
   VolGrid2d<T, R, W, WIDTH, HEIGHT>
 {
-  /// A [`VolAddress`] with matrix-style access pattern.
+  /// Converts the address into a `VolGrid2d`
   ///
   /// # Safety
   ///
   /// The given address must be a valid [`VolAddress`] at each position in the
-  /// matrix:
-  ///
-  /// ```text
-  /// for all (X, Y) in (0..WIDTH, 0..HEIGHT):
-  ///     let accessible = address + mem::size_of::<T>() * (X + WIDTH * Y);
-  ///     assert_valid_voladdress(accessible);
-  /// ```
+  /// grid, as if you were making a `VolBlock<T,R,W,{WIDTH * HEIGHT}>`.
   #[inline]
   #[must_use]
   pub const unsafe fn new(address: usize) -> Self {
     Self { base: VolAddress::new(address) }
   }
 
-  /// Create a two-dimensional table from a 1D `VolBlock`.
+  /// Creates a `VolGrid2d` from an appropriately sized `VolBlock`.
   ///
   /// # Panics
   ///
@@ -64,8 +57,7 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
     Self { base: block.base }
   }
 
-  /// Convert this 2D block into a single 1D [`VolBlock`] spanning the whole
-  /// matrix.
+  /// Turn a `VolGrid2d` into its `VolBlock` equivalent.
   ///
   /// # Panics
   ///
@@ -80,24 +72,25 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
     VolBlock { base: self.base }
   }
 
-  /// Get the [`VolAddress`] at specified matrix location, returns
-  /// `None` if out of bound.
+  /// Gets the address of the `(x,y)` given.
+  ///
+  /// Returns `None` if either coordinate it out of bounds.
   #[inline]
   #[must_use]
   pub const fn get(self, x: usize, y: usize) -> Option<VolAddress<T, R, W>> {
     if x < WIDTH && y < HEIGHT {
-      // SAFETY: if x < WIDTH && y < HEIGHT
+      // SAFETY: if condition
       Some(unsafe { self.base.add(x + y * WIDTH) })
     } else {
       None
     }
   }
 
-  /// Indexes at `y * HEIGHT + x` the matrix.
+  /// Indexes the address of the `(x,y)` given.
   ///
   /// ## Panics
   ///
-  /// * If `x >= WIDTH || y >= HEIGHT`.
+  /// * If either coordinate it out of bounds this will panic.
   #[inline]
   #[must_use]
   #[track_caller]
@@ -113,13 +106,8 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
       }
     }
   }
-}
-
-/// Row access methods.
-impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
-  VolGrid2d<T, R, W, WIDTH, HEIGHT>
-{
-  /// Get a single row of the matrix as a [`VolBlock`].
+  
+  /// Get a single row of the grid as a [`VolBlock`].
   #[inline]
   #[must_use]
   pub const fn get_row(self, y: usize) -> Option<VolBlock<T, R, W, WIDTH>> {
@@ -136,32 +124,3 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
   }
 }
 
-/*
-# This requires extended const_generic support, which is highly not going
-# to happen soon in stable, so we feature-gate.
-VolGrid2d_column = []
-/// Column access methods.
-#[cfg(feature = "VolGrid2d_column")]
-impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
-  VolGrid2d<T, R, W, WIDTH, HEIGHT>
-{
-  /// Get a signle column of the matrix as a [`VolSeries`].
-  #[inline]
-  #[must_use]
-  pub const fn get_column(
-    self, x: usize,
-  ) -> Option<VolSeries<T, R, W, HEIGHT, { WIDTH * core::mem::size_of::<T>() }>>
-  {
-    if x < WIDTH {
-      // SAFETY:
-      // - `x < WIDTH` (hence, will never spill out of the matrix)
-      // - `VolGrid2d::new` safety condition guarantees that all addresses
-      //   constructible for `VolSeries<T, HEIGHT, …>` are valid `VolAddress`,
-      //   which is the safety condition of `VolSeries::new`.
-      Some(unsafe { VolSeries { base: self.base.add(x) } })
-    } else {
-      None
-    }
-  }
-}
-*/
