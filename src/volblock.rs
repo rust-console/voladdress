@@ -174,6 +174,7 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   ///   `unsafe` method.
   #[inline]
   #[must_use]
+  #[cfg(feature = "experimental_volregion")]
   pub const unsafe fn as_voladdress(self) -> VolAddress<[T; C], R, W> {
     self.base.cast::<[T; C]>()
   }
