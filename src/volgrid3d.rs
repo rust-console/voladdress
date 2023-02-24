@@ -19,7 +19,7 @@ use crate::{VolAddress, VolBlock, VolGrid2d};
 ///   of the `T` type, starting from the base address.
 /// * The memory block must not wrap around past the end of the address space.
 pub struct VolGrid3d<T, R, W, const WIDTH: usize, const HEIGHT: usize, const FRAMES: usize> {
-  base: VolAddress<T, R, W>,
+  pub(crate) base: VolAddress<T, R, W>,
 }
 
 /// Direct index access methods.
