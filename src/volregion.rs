@@ -77,6 +77,7 @@ impl<T, R, W> VolRegion<T, R, W> {
   /// Gets the length (in elements) of the region.
   #[inline]
   #[must_use]
+  #[allow(clippy::len_without_is_empty)]
   pub const fn len(self) -> usize {
     self.len
   }
