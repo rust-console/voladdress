@@ -3,8 +3,9 @@
 ## 1.3.0
 
 * New: `VolGrid2d<T,R,W, WIDTH, HEIGHT>` works like video memory (accessed with `(x,y)`)
-* New `VolGrid3d<T,R,W, WIDTH, HEIGHT, FRAMES>` works like multi-frame video memory.
-  You pick a frame (the "z-axis", if you will) to get a specific `VolGrid2d`.
+* New `VolGrid2dStrided<T,R,W, WIDTH, HEIGHT, FRAMES, BYTE_STRIDE>` has many
+  "frames" of `VolGrid2d`, each offset by the given stride in bytes. The stride
+  can be larger, equal to, or smaller than the number of bytes per frame.
 * New: `VolRegion<T,R,W>` is a 1d span with a dynamic size, like a slice.
 * Removed: the "experimental" cargo features were removed from Cargo.toml.
   If you had opted-in to using them you will have to adjust your `[dependencies]` entry.
