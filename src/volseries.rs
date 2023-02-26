@@ -71,15 +71,8 @@ impl<T, R, W, const C: usize, const S: usize> VolSeries<T, R, W, C, S> {
   #[must_use]
   #[track_caller]
   pub const fn index(self, i: usize) -> VolAddress<T, R, W> {
-    if i < C {
-      unsafe { self.base.cast::<[u8; S]>().add(i).cast::<T>() }
-    } else {
-      // Note(Lokathor): We force a const panic by indexing out of bounds.
-      #[allow(unconditional_panic)]
-      unsafe {
-        VolAddress::new([usize::MAX][1])
-      }
-    }
+    assert!(i < C);
+    unsafe { self.base.cast::<[u8; S]>().add(i).cast::<T>() }
   }
 
   /// Gets the address of the `i`th position, if it's in bounds.

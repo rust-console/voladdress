@@ -112,16 +112,10 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
   #[must_use]
   #[track_caller]
   pub const fn index(self, x: usize, y: usize) -> VolAddress<T, R, W> {
-    match self.get(x, y) {
-      Some(address) => address,
-      None => {
-        // Note(Lokathor): We force a const panic by indexing out of bounds.
-        #[allow(unconditional_panic)]
-        unsafe {
-          VolAddress::new([usize::MAX][1])
-        }
-      }
-    }
+    assert!(x < WIDTH);
+    assert!(y < HEIGHT);
+    // safety: asserts
+    unsafe { self.base.add(x + y * WIDTH) }
   }
 
   /// Get a single row of the grid as a [`VolBlock`].

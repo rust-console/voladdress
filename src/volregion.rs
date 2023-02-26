@@ -139,15 +139,8 @@ impl<T, R, W> VolRegion<T, R, W> {
   #[must_use]
   #[track_caller]
   pub const fn index(self, i: usize) -> VolAddress<T, R, W> {
-    if i < self.len {
-      unsafe { self.addr.add(i) }
-    } else {
-      // Note(Lokathor): We force a const panic by indexing out of bounds.
-      #[allow(unconditional_panic)]
-      unsafe {
-        VolAddress::new([usize::MAX][1])
-      }
-    }
+    assert!(i < self.len);
+    unsafe { self.addr.add(i) }
   }
 
   /// Gets `Some(addr)` if in bounds, or `None` if out of bounds.
