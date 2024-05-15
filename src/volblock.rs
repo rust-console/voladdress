@@ -164,20 +164,6 @@ impl<T, R, W, const C: usize> VolBlock<T, R, W, C> {
   pub const fn as_region(self) -> VolRegion<T, R, W> {
     VolRegion { addr: self.base, len: C }
   }
-
-  /// Casts a block to an address to an equivalent sized array.
-  ///
-  /// ## Safety
-  /// * As per the general `VolAddress` construction rules.
-  /// * It is *highly likely* that on any device this is safe, but because of
-  ///   possible strangeness with volatile side effects this is marked as an
-  ///   `unsafe` method.
-  #[inline]
-  #[must_use]
-  #[cfg(feature = "experimental_volregion")]
-  pub const unsafe fn as_voladdress(self) -> VolAddress<[T; C], R, W> {
-    self.base.cast::<[T; C]>()
-  }
 }
 
 #[test]
