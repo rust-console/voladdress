@@ -53,6 +53,20 @@ impl<T, R, W, const WIDTH: usize, const HEIGHT: usize>
     Self { base: VolAddress::new(address) }
   }
 
+  /// The grid's width.
+  #[inline]
+  #[must_use]
+  pub const fn width(self) -> usize {
+    WIDTH
+  }
+
+  /// The grid's height.
+  #[inline]
+  #[must_use]
+  pub const fn height(self) -> usize {
+    HEIGHT
+  }
+
   /// Creates a `VolGrid2d` from an appropriately sized `VolBlock`.
   ///
   /// # Panics
