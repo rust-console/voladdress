@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+* Added `width` and `height` methods to `VolGrid2d`.
+
 ## 1.3.0
 
 * New: `VolGrid2d<T,R,W, WIDTH, HEIGHT>` works like video memory (accessed with `(x,y)`)
